@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"runtime/trace"
 	"testing"
 	"uk.ac.bris.cs/gameoflife/gol"
 	"uk.ac.bris.cs/gameoflife/util"
@@ -17,7 +19,7 @@ type test struct {
 	args args
 }
 
-func Test(t *testing.T) {
+func TestGol(t *testing.T) {
 	tests := []test{
 		{"0 turns", args{
 			p: gol.Params{
@@ -65,24 +67,6 @@ func Test(t *testing.T) {
 		}},
 	}
 
-	// Special test to be used to generate traces - not a real test
-	f, _ := os.Create("trace.out")
-	traceParams := gol.Params{
-		Turns:       10,
-		Threads:     4,
-		ImageWidth:  64,
-		ImageHeight: 64,
-	}
-
-	t.Run("trace", func(t *testing.T) {
-		aliveCells := make(chan []util.Cell)
-		trace.Start(f)
-		gol.Run(traceParams, aliveCells, nil)
-		for range aliveCells {
-		}
-		trace.Stop()
-		f.Close()
-	})
 	// Run normal tests
 	for _, test := range tests {
 		for threads := 1; threads <= 16; threads += 1 {
@@ -99,6 +83,26 @@ func Test(t *testing.T) {
 			})
 		}
 	}
+}
+
+// TestTrace is a special test to be used to generate traces - not a real test
+func TestTrace(t *testing.T) {
+	traceParams := gol.Params{
+		Turns:       10,
+		Threads:     4,
+		ImageWidth:  64,
+		ImageHeight: 64,
+	}
+	f, _ := os.Create("trace.out")
+	aliveCells := make(chan []util.Cell)
+	err := trace.Start(f)
+	util.Check(err)
+	gol.Run(traceParams, aliveCells, nil)
+	for range aliveCells {
+	}
+	trace.Stop()
+	err = f.Close()
+	util.Check(err)
 }
 
 func boardFail(t *testing.T, given, expected []util.Cell, p gol.Params) bool {
