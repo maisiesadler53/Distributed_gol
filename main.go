@@ -51,5 +51,6 @@ func main() {
 
 	// DO NOT MODIFY.
 	gol.Run(params, aliveCells, keyPresses)
+	// DO NOT MODIFY.
 	sdl.Start(params, aliveCells, keyPresses)
 }
