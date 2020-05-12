@@ -65,24 +65,27 @@ func Test(t *testing.T) {
 		}},
 	}
 
-	//Special test to be used to generate traces - not a real test
-	//trace := test{"trace", args{
-	//	p: gol.Params{
-	//		Turns:       10,
-	//		Threads:     4,
-	//		ImageWidth:  64,
-	//		ImageHeight: 64,
-	//	},
-	//}}
-	//
-	//t.Run(trace.name, func(t *testing.T) {
-	//	alive := gol.Run(test.args.p, nil)
-	//	for range alive {
-	//	}
-	//})
+	// Special test to be used to generate traces - not a real test
+	f, _ := os.Create("trace.out")
+	traceParams := gol.Params{
+		Turns:       10,
+		Threads:     4,
+		ImageWidth:  64,
+		ImageHeight: 64,
+	}
 
+	t.Run("trace", func(t *testing.T) {
+		aliveCells := make(chan []util.Cell)
+		trace.Start(f)
+		gol.Run(traceParams, aliveCells, nil)
+		for range aliveCells {
+		}
+		trace.Stop()
+		f.Close()
+	})
+	// Run normal tests
 	for _, test := range tests {
-		for threads := 1; threads <= 16; threads++ {
+		for threads := 1; threads <= 16; threads += 1 {
 			testName := fmt.Sprintf("%dx%dx%d-%d", test.args.p.ImageWidth, test.args.p.ImageHeight, test.args.p.Turns, threads)
 			t.Run(testName, func(t *testing.T) {
 				test.args.p.Threads = threads
@@ -92,9 +95,7 @@ func Test(t *testing.T) {
 				for newCells := range aliveCells {
 					cells = newCells
 				}
-				if test.name != "trace" {
-					assertEqualBoard(t, cells, test.args.expectedAlive, test.args.p)
-				}
+				assertEqualBoard(t, cells, test.args.expectedAlive, test.args.p)
 			})
 		}
 	}
