@@ -69,7 +69,7 @@ func TestGol(t *testing.T) {
 
 	// Run normal tests
 	for _, test := range tests {
-		for threads := 1; threads <= 16; threads += 1 {
+		for threads := 1; threads <= 16; threads++ {
 			testName := fmt.Sprintf("%dx%dx%d-%d", test.args.p.ImageWidth, test.args.p.ImageHeight, test.args.p.Turns, threads)
 			t.Run(testName, func(t *testing.T) {
 				test.args.p.Threads = threads
