@@ -1,22 +1,21 @@
 package sdl
 
 import (
+	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
-	"time"
 	"uk.ac.bris.cs/gameoflife/gol"
-	"uk.ac.bris.cs/gameoflife/util"
 )
 
-func Start(p gol.Params, aliveCells <-chan []util.Cell, keyPresses chan<- rune) {
+func Start(p gol.Params, events <-chan gol.Event, keyPresses chan<- rune) {
 	w := NewWindow(int32(p.ImageWidth), int32(p.ImageHeight))
 
 sdlLoop:
 	for {
 		event := w.PollEvent()
 		if event != nil {
-			switch event.(type) {
+			switch e := event.(type) {
 			case *sdl.KeyboardEvent:
-				switch event.(*sdl.KeyboardEvent).Keysym.Sym {
+				switch e.Keysym.Sym {
 				case sdl.K_p:
 					keyPresses <- 'p'
 				case sdl.K_s:
@@ -27,19 +26,23 @@ sdlLoop:
 			}
 		}
 		select {
-		case cells, ok := <-aliveCells:
+		case event, ok := <-events:
 			if !ok {
 				w.Destroy()
 				break sdlLoop
 			}
-			w.ClearPixels()
-			for _, c := range cells {
-				w.SetPixel(c.X, c.Y)
+			switch e := event.(type) {
+			case gol.CellFlipped:
+				w.FlipPixel(e.Cell.X, e.Cell.Y)
+			case gol.TurnComplete:
+				w.RenderFrame()
+			default:
+				if len(event.String()) > 0 {
+					fmt.Printf("Completed Turns %-8v%v\n", event.GetCompletedTurns(), event)
+				}
 			}
-			w.RenderFrame()
-
 		default:
-			time.Sleep(10 * time.Millisecond)
+			break
 		}
 	}
 
