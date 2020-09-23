@@ -8,8 +8,7 @@ import (
 	"uk.ac.bris.cs/gameoflife/sdl"
 )
 
-// main is the function called when starting Game of Life with 'make gol'
-// Do not edit until Stage 2.
+// main is the function called when starting Game of Life with 'go run .'
 func main() {
 	runtime.LockOSThread()
 	var params gol.Params
@@ -32,9 +31,13 @@ func main() {
 		512,
 		"Specify the height of the image. Defaults to 512.")
 
-	flag.Parse()
+	flag.IntVar(
+		&params.Turns,
+		"turns",
+		10000000000,
+		"Specify the number of turns to process. Defaults to 10000000000.")
 
-	params.Turns = 10000000000
+	flag.Parse()
 
 	fmt.Println("Threads:", params.Threads)
 	fmt.Println("Width:", params.ImageWidth)
