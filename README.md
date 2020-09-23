@@ -132,7 +132,7 @@ In this stage you are required to create an implementation that uses a number of
 
 ## Viva
 
-You will be required to demostrate your implementations in the viva.This will include running tests as well as showing PGM image output and keyboard control.
+You will be required to demostrate your implementations in the viva. This will include running tests as well as showing PGM image output and keyboard control.
 
 As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report. 
 
