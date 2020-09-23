@@ -96,17 +96,14 @@ Test the visualisation and control rules by running `go run .`
 
 In this stage you are required to create an implementation that uses a number of AWS nodes to calculate the new state of the board.
 
-[TODO] Steps
+[TODO] Steps?
 - Single threaded, distributed
 - Multi threaded, distributed
 - Extension
 
-Say tests will need to be run in the viva.
+[TODO] Use a locally running client to connect to the distributed system?
 
-
-[TODO] Use a locally running client to connect to the distributed system
-
- [TODO] Some sort of fault tolerance?
+[TODO] Some sort of fault tolerance?
 
 ### Success Criteria
 
@@ -119,9 +116,9 @@ Say tests will need to be run in the viva.
 
 ### In your report
 
+- Discuss the system design and reasons for any decisions made.
 - Explain and analyse the benchmark results obtained.
 - Briefly discuss your methodology for aquiring benchmark results.
-- Discuss the system design and reasons for any decisions made.
 
 ## Extensions
 
