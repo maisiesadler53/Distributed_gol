@@ -41,9 +41,9 @@ In this stage you are required to write code to evolve Game of Life using multip
 
 ### Step 1
 
-Implement the Game of Life logic as it was described in the task introduction. We suggest starting with a single-threaded implementation that will serve as a starting point in subsequent steps. Your Game of Life should evolve for the number of turns specified in `gol.Params.Turns`. Ignore the `gol.Params.Threads` for now.
+Implement the Game of Life logic as it was described in the task introduction. We suggest starting with a single-threaded implementation that will serve as a starting point in subsequent steps. Your Game of Life should evolve for the number of turns specified in `gol.Params.Turns`.
 
-Test your code using `go test -v`. All test cases under `TestGol` should pass at this point.
+Test your code using `go test -v -run=TestGol/-1$`. All the tests ran should pass.
 
 ### Step 2
 
@@ -51,13 +51,13 @@ Parallelise your Game of Life so that it uses worker threads to calculate the ne
 
 *Note: You are free to design your system as you see fit, however, we encourage you to primarily use channels rather than traditional synchronisation mechanisms (mutexes, semaphores, condition variables).*
 
-All test cases under `TestGol` should still pass. You can use tracing to verify the correct number of workers was used this time.
+Test your code using `go test -v -run=TestGol`. You can use tracing to verify the correct number of workers was used this time.
 
 ### Step 3
 
 The lab sheets included the use of a timer. Now using a ticker, report the number of cells that are still alive *every 2 seconds*. To report the count use the `AliveCellsCount` event.
 
-All test cases under `TestAlive` should pass at this point.
+Test your code using `go test -v`.
 
 ### Step 4
 
@@ -130,12 +130,6 @@ In this stage you are required to create an implementation that uses a number of
 
 [TODO]
 
-## Viva
-
-You will be required to demostrate your implementations in the viva.This will include running tests as well as showing PGM image output and keyboard control.
-
-As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report. 
-
 ## Report
 
 You need to submit a CONCISE (strictly max 6 pages) report which should cover the following topics:
@@ -144,9 +138,18 @@ Functionality and Design: Outline what functionality you have implemented, which
 
 Critical Analysis: Describe briefly the other experiments and analysis you carried out, provide a selection of appropriate results. Keep a history of your implementations and provide benchmark results from various stages. Explain and analyse the benchmark results obtained. Analyse the important factors responsible for virtues and limitations of your implementations. 
 
-Make sure your team’s names and user names appear on page 1 of the report.
+Make sure your team’s names and user names appear on page 1 of the report. Don't include a cover page.
+
+## Viva
+
+You will be required to demostrate your implementations in the viva.This will include running tests as well as showing PGM image output and keyboard control.
+
+As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report. 
+
 
 ## Submission Mistakes
+
+[TODO]
 
 ## Workload and Time Management
 
