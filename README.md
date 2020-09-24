@@ -57,13 +57,13 @@ Test your code using `go test -v -run=TestGol`. You can use tracing to verify th
 
 The lab sheets included the use of a timer. Now using a ticker, report the number of cells that are still alive *every 2 seconds*. To report the count use the `AliveCellsCount` event.
 
-Test your code using `go test -v`.
+Test your code using `go test -v -run=TestAlive`.
 
 ### Step 4
 
 Implement logic to output the state of the board after all turns have completed as a PGM image.
 
-Test your code using `go run . -turns=...`. Inspect the output files and ensure they are correct.
+Test your code using `go test -v -run=TestPgm`. Finally, run `go test -v` and make sure all tests are passing.
 
 ### Step 5
 
@@ -77,9 +77,8 @@ Test the visualisation and control rules by running `go run .`
 
 ### Success Criteria
 
-- Pass all test cases under `TestGol` and `TestAlive`.
+- Pass all test cases under `TestGol`, `TestAlive` and `TestPgm`.
 - Use the correct number of workers as requested in `gol.Params`.
-- Output the correct PGM images.
 - Display the live progress of the game using SDL.
 - Ensure that all keyboard control rules work correctly.
 - Use benchmarks to measure the performance of your parallel program.
