@@ -79,7 +79,7 @@ Implement logic to visualise the state of the game using SDL. Also implement the
 
 - If `s` is pressed, generate a PGM file with the current state of the board.
 - If `q` is pressed, generate a PGM file with the current state of the board and then terminate the program. Your program should *not* continue to execute all turns set in `gol.Params.Turns`.
-- If `p` is pressed, pause the processing and print the current turn that is being processed. If `p` is pressed again resume the processing and print `"Continuing"`. It is *not* necessary for `q` and `s` to work while the execution is pauesed.
+- If `p` is pressed, pause the processing and print the current turn that is being processed. If `p` is pressed again resume the processing and print `"Continuing"`. It is *not* necessary for `q` and `s` to work while the execution is paused.
 
 Test the visualisation and control rules by running `go run .`
 
@@ -95,7 +95,7 @@ Test the visualisation and control rules by running `go run .`
 ### In your Report
 
 - Discuss the goroutines you used and how they work together.
-- Explain and analyse the benchmark results obtained.
+- Explain and analyse the benchmark results obtained. You may want to consider using graphs to visualise your benchmarks.
 - Analyse how your implementation scales as more workers are added.
 - Briefly discuss your methodology for acquiring any results or measurements.
 
@@ -217,7 +217,7 @@ Functionality and Design: Outline what functionality you have implemented, which
 
 Critical Analysis: Describe the experiments and analysis you carried out. Provide a selection of appropriate results. Keep a history of your implementations and provide benchmark results from various stages. Explain and analyse the benchmark results obtained. Analyse the important factors responsible for virtues and limitations of your implementations.
 
-Make sure your team’s names and user names appear on page 1 of the report. **Do not include a cover page.**
+Make sure your team member’s names and user names appear on page 1 of the report. **Do not include a cover page.**
 
 ## Viva
 
@@ -225,4 +225,4 @@ You will be required to demostrate your implementations in a viva. This will inc
 
 As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report.
 
-All vivas will run in Week 11. There is no seperate viva mark. However, it will affect the other marks.
+All vivas will run online in Week 11. There is no seperate viva mark. However, it will affect the other marks.
