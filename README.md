@@ -97,39 +97,87 @@ Test the visualisation and control rules by running `go run .`
 - Discuss the goroutines you used and how they work together.
 - Explain and analyse the benchmark results obtained.
 - Analyse how your implementation scales as more workers are added.
-- Briefly discuss your methodology for aquiring any results or measurements.
+- Briefly discuss your methodology for acquiring any results or measurements.
 
 ## Stage 2 - Distributed Implementation
 
-In this stage you are required to create an implementation that uses a number of AWS nodes to calculate the new state of the board.
+In this stage you are required to create an implementation that uses a number of
+AWS nodes to cooperatively calculate the new state of the Game of Life board,
+and communicate state between machines over a network.  Below is a series of
+suggested steps for approaching the problem, but you are *not* required to
+follow this sequence, and can jump straight to implementing the more advanced
+versions of system if you feel confident about it.
 
-[TODO] Steps?
-- Single threaded, distributed
-- Multi threaded, distributed
-- Extension
+### Step 1
 
-[TODO] Use a locally running client to connect to the distributed system?
+Implement the Game of Life logic as described above, in a single-machine
+implementation that can serve as a starting-point for a distributed version. You
+should be able to test your serial code using `go test -v -run=TestGol/-1$` and
+all tests should pass.
 
-[TODO] Some sort of fault tolerance?
+### Step 2
+
+Separate your SDL controller (which captures keypresses from a user) from the
+GoL logic that evolves a board and produces images. You must be able to run the
+SDL controller as a client on a local machine, and the GoL engine as a server on
+an AWS node, and have commands input on the controller manage the behaviour of
+the GoL engine. 
+
+- If `s` is pressed, generate a PGM file on the AWS node with the current state
+  of the board.
+- If `q` is pressed, close the controller client program without causing an
+  error on the GoL server. A new controller should be able to take over
+interaction with the GoL engine.
+- If `p` is pressed, pause the processing *on the AWS node* and have the
+  *controller* print the current turn that is being processed. If `p` is pressed
+again resume the processing and have the controller print `"Continuing"`. It is
+*not* necessary for `q` and `s` to work while the execution is paused.
+
+### Step 3
+
+Split up the computation of the GoL board state (from the GoL server) across
+multiple worker machines (AWS nodes).  You will need some means of distributing
+work between multiple AWS machines and gathering results together in one place,
+while avoiding any errors in the collected board state.  Try to design your
+solution so it takes advantage of the possible *scalability* of many worker
+machines.
+
+### Step 4
+
+Alter your keypress logic so that when a `k` keypress is input on the controller
+client, all components of the distributed system are shut down cleanly, and the
+system outputs a PGM image of the latest state. 
+
 
 ### Success Criteria
 
 - Pass all tests.
 - Output the correct PGM images.
 - Ensure the keyboard control rules work as needed.
-- Use benchmarks to measure the performance of your distributed program.
+- At minimum, the controller and the Game of Life engine should be separate
+  components running on different machines (as per Step 2 above) and
+communicating.
 
 *There is __no need__ to display the live progress of the game using SDL. However, you will still need to run a blank SDL window to register the keypresses.*
 
 ### In your report
 
 - Discuss the system design and reasons for any decisions made.
-- Explain and analyse the benchmark results obtained.
-- Briefly discuss your methodology for aquiring benchmark results.
+- Explain what data is sent over the network, when, and why it is necessary.  
+- Discuss how your system might scale with the addition of other distributed
+  components.
+- Briefly discuss your methodology for acquiring any results or measurements.
+- Identify how components of your system disappearing (e.g., broken network
+  connections) might affect the overall system and its results.
+
 
 ## Extensions
 
-[TODO]
+- Fault tolerance.
+- Parallel distributed system with multiple worker threads per machine using
+  common comms.
+- Live viewing of game.
+
 
 -----------------------------------------------------------------------
 
