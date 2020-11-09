@@ -144,6 +144,8 @@ while avoiding any errors in the collected board state.  Try to design your
 solution so it takes advantage of the possible *scalability* of many worker
 machines.
 
+Make sure to keep the communication between nodes as efficient as possible. For example, consider a halo exchange scheme where only the edges are communicated between the nodes.
+
 ### Step 4
 
 Alter your keypress logic so that when a `k` keypress is input on the controller
@@ -159,12 +161,13 @@ system outputs a PGM image of the latest state.
 - At minimum, the controller and the Game of Life engine should be separate
   components running on different machines (as per Step 2 above) and
 communicating.
+- To fully satisfy the criteria your implementation should use multiple AWS nodes efficiently.
 
 *There is __no need__ to display the live progress of the game using SDL. However, you will still need to run a blank SDL window to register the keypresses.*
 
 ### In your report
 
-- Discuss the system design and reasons for any decisions made.
+- Discuss the system design and reasons for any decisions made. Consider using a diagram to aid your discussion.
 - Explain what data is sent over the network, when, and why it is necessary.  
 - Discuss how your system might scale with the addition of other distributed
   components.
@@ -185,9 +188,21 @@ communicating.
 
 ## Mark Scheme
 
-[TODO]
+You will receive a mark out of 100 for this coursework.
 
-## Report
+### Parallel Implementation (35 marks)
+
+40% - You must be able to demonstrate a parallel Game of Life implementation (see Step 2). The number of threads *cannot* be hardocoded but it may be the case that only some configurations are working (e.g it's only working if the number of threads is a power of 2).
+
+70% - Satisfy *all* success criteria for this stage.
+
+### Distributed Implementation (35 marks)
+
+40% - You must be able to demonstrate a distributed Game of Life implementation that is controlled by a locally running controller (see Step 2).
+
+70% - Satisfy *all* success criteria for this stage.
+
+### Report (30 marks)
 
 You need to submit a CONCISE (strictly max 6 pages) report which should cover the following topics:
 
@@ -199,11 +214,11 @@ Make sure your team’s names and user names appear on page 1 of the report. Don
 
 ## Viva
 
-You will be required to demostrate your implementations in the viva. This will include running tests as well as showing PGM image output and working keyboard control.
+You will be required to demostrate your implementations in a viva. This will include running tests as well as showing PGM image output and working keyboard control.
 
 As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report.
 
-All vivas will run in Week 11.
+All vivas will run in Week 11. There is no seperate viva mark. However, it will affect the other marks.
 
 ## Workload and Time Management
 
