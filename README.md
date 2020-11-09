@@ -120,10 +120,17 @@ You should be able to test your serial code using `go test -v -run=TestGol/-1$` 
 Separate your SDL controller (which captures keypresses from a user) from the
 GoL logic that evolves a board and produces images. You must be able to run the
 SDL controller as a client on a local machine, and the GoL engine as a server on
-an AWS node, and have commands input on the controller manage the behaviour of
-the GoL engine. 
+an AWS node.
 
-- If `s` is pressed, generate a PGM file on the AWS node with the current state
+Start by implementing a basic controller which can evolve Game of Life for the number of turns specified in `gol.Params.Turns`. Test your implementation using `go test -v -run=TestGol/-1$` *on the controller*.
+
+You should report the number of cells that are still alive *every 2 seconds* to the local controller. The controller should then publish an `AliveCellsCount` event. Test your implementation using `go test -v -run=TestAlive` *on the controller*.
+
+The local controller should be able to output the state of the board after all turns have completed as a PGM image. Test your implementation using `go test -v -run=TestPgm/-1$` *on the controller*.
+
+Finally, the local controller should be able to manage the behaviour of the GoL engine according to the following rules: 
+
+- If `s` is pressed, the controller should generate a PGM file with the current state
   of the board.
 - If `q` is pressed, close the controller client program without causing an
   error on the GoL server. A new controller should be able to take over
@@ -133,7 +140,7 @@ interaction with the GoL engine.
 again resume the processing and have the controller print `"Continuing"`. It is
 *not* necessary for `q` and `s` to work while the execution is paused.
 
-You should also be able to test your implementation using `go test -v -run=TestGol/-1$` *on the controller* and all tests should pass.
+Test the control rules by running `go run .`.
 
 ### Step 3
 
