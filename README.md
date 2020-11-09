@@ -4,9 +4,9 @@
 
 This is the Computer Systems A summative coursework. The coursework is worth 80% of the unit mark. It is to be completed in your programming pairs. You must report any change to your pairing to the unit director *before* starting your assignment. It runs over 4 weeks and the deadline for submitting all your work is **Friday 11 December 13:00**.
 
-Talk to each other regularly and make sure you manage your team well. Let us know about issues before they grow to affect your team’s performance.
+Talk to each other regularly and make sure you manage your team well. Let us know about issues before they grow to affect your team’s performance. It is important to carefully manage your time for this assignment. Do not spend hours trying to debug on your own; use pair programming, seek help from our teaching assistants during scheduled labs and ask questions on Teams.
 
-**Do not plagiarise.** Both team members should understand all code developed in detail.
+**Do not plagiarise.** Both team members should understand all code developed in detail. 
 
 ## Task Overview
 
@@ -211,13 +211,13 @@ You will receive a mark out of 100 for this coursework.
 
 ### Report (30 marks)
 
-You need to submit a CONCISE (strictly max 6 pages) report which should cover the following topics:
+You need to submit a CONCISE (**strictly** max 6 pages) report which should cover the following topics:
 
 Functionality and Design: Outline what functionality you have implemented, which problems you have solved with your implementations and how your program is designed to solve the problems efficiently and effectively.
 
 Critical Analysis: Describe the experiments and analysis you carried out. Provide a selection of appropriate results. Keep a history of your implementations and provide benchmark results from various stages. Explain and analyse the benchmark results obtained. Analyse the important factors responsible for virtues and limitations of your implementations.
 
-Make sure your team’s names and user names appear on page 1 of the report. Don't include a cover page.
+Make sure your team’s names and user names appear on page 1 of the report. **Do not include a cover page.**
 
 ## Viva
 
@@ -226,7 +226,3 @@ You will be required to demostrate your implementations in a viva. This will inc
 As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report.
 
 All vivas will run in Week 11. There is no seperate viva mark. However, it will affect the other marks.
-
-## Workload and Time Management
-
-It is important to carefully manage your time for this assignment. Do not spend hours trying to debug on your own; use pair programming, seek help from our teaching assistants during scheduled labs and ask questions on Teams.
