@@ -111,9 +111,9 @@ versions of system if you feel confident about it.
 ### Step 1
 
 Implement the Game of Life logic as described above, in a single-machine
-implementation that can serve as a starting-point for a distributed version. You
-should be able to test your serial code using `go test -v -run=TestGol/-1$` and
-all tests should pass.
+implementation that can serve as a starting-point for a distributed version. 
+
+You should be able to test your serial code using `go test -v -run=TestGol/-1$` and all tests should pass.
 
 ### Step 2
 
@@ -132,6 +132,8 @@ interaction with the GoL engine.
   *controller* print the current turn that is being processed. If `p` is pressed
 again resume the processing and have the controller print `"Continuing"`. It is
 *not* necessary for `q` and `s` to work while the execution is paused.
+
+You should also be able to test your implementation using `go test -v -run=TestGol/-1$` *on the controller* and all tests should pass.
 
 ### Step 3
 
