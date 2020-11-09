@@ -1,8 +1,10 @@
 # CSA Coursework: Game of Life
 
-This is the Computer Systems A summative coursework. It runs over approximately [TODO] weeks. The coursework is worth [TODO]% of the unit mark. It is to be completed in your programming pairs. You must report any change to your pairing to the unit director *before* starting your assignment. 
+**IMPORTANT: Monday 16.11 at 10:00 - COURSEWORK Q&A on Teams**
 
-Meet regularly and make sure you manage your team well. Let us know about issues before they grow to affect your team’s performance.
+This is the Computer Systems A summative coursework. The coursework is worth 80% of the unit mark. It is to be completed in your programming pairs. You must report any change to your pairing to the unit director *before* starting your assignment. It runs over 5 weeks and the deadline for submitting all your work is **Friday 11 December 13:00**.
+
+Talk to each other regularly and make sure you manage your team well. Let us know about issues before they grow to affect your team’s performance.
 
 **Do not plagiarise.** Both team members should understand all code developed in detail.
 
@@ -23,19 +25,25 @@ Your task is to design and implement programs which simulate the Game of Life on
 
 ### Skeleton Code
 
-To help you along, you are given a simple skeleton project. The skeleton includes tests and an SDL-based visualiser. All parts of the skeleton are commented. If you have any doubts please ask a TA for help. 
+To help you along, you are given a simple skeleton project. The skeleton includes tests and an SDL-based visualiser. All parts of the skeleton are commented. All the code has been written in Go. You will not be required to write any C code. If you have any questions about the skeleton please ask a TA for help.
+
+You **must not** modify any of the files ending in `_test.go`. We will be using these tests to judge the correctness of your implementation.
 
 ### Submission
 
-The coursework requires two independent implementations. You will be required to submit **both** implementations (assuming both were attempted).
+The coursework requires two independent implementations. You will be required to submit **both** implementations (assuming both were attempted). Every student is required to upload their full work to Blackboard. There will be three sperate submissions points on Blackboard - one for the report and two for each implementation.
 
-[TODO] 3 submission points on BB? Parallel, Distributed, Report?
+For the report you must submit a single file called `report.pdf`.
 
-Every student is required to upload their full work to Blackboard before [TODO DEADLINE].
+For the parallel implementation you must submit a single zip file called `parallel.zip`. It must contain all the code required to compile and run the program.
 
-Make sure you submit it early (not last minute!) to avoid upload problems. Each team member has to upload an identical copy of the team's work.
+For the distributed implementation you must submit a single zip file called `distributed.zip`. It must contain all the code required to compile and run the program.
 
-## Stage 1 - Parallel Implementation 
+Submitting different filenames or file formats (e.g. `.docx`, `.tex`, `.7z` or `.rar`) will result in a mark penalty.
+
+Make sure you submit it early (not last minute!) to avoid upload problems. **Each team member has to upload an identical copy of the team's work.**
+
+## Stage 1 - Parallel Implementation
 
 In this stage you are required to write code to evolve Game of Life using multiple worker goroutines on a single machine. Below are some suggested steps to help you get started. You are *not* required to follow them. Your implementation will be marked against the success criteria outlined below.
 
@@ -43,7 +51,7 @@ In this stage you are required to write code to evolve Game of Life using multip
 
 Implement the Game of Life logic as it was described in the task introduction. We suggest starting with a single-threaded implementation that will serve as a starting point in subsequent steps. Your Game of Life should evolve for the number of turns specified in `gol.Params.Turns`.
 
-Test your code using `go test -v -run=TestGol/-1$`. All the tests ran should pass.
+Test your serial, single-threaded code using `go test -v -run=TestGol/-1$`. All the tests ran should pass.
 
 ### Step 2
 
@@ -67,7 +75,7 @@ Test your code using `go test -v -run=TestPgm`. Finally, run `go test -v` and ma
 
 ### Step 5
 
-Implement logic to visualise the state of the game using SDL. Also implement the following control rules. Note that the goroutine running SDL provides you with a channel containing keypresses. 
+Implement logic to visualise the state of the game using SDL. Also implement the following control rules. Note that the goroutine running SDL provides you with a channel containing the relevant keypresses.
 
 - If `s` is pressed, generate a PGM file with the current state of the board.
 - If `q` is pressed, generate a PGM file with the current state of the board and then terminate the program. Your program should *not* continue to execute all turns set in `gol.Params.Turns`.
@@ -106,7 +114,7 @@ In this stage you are required to create an implementation that uses a number of
 
 ### Success Criteria
 
-- Pass all tests. 
+- Pass all tests.
 - Output the correct PGM images.
 - Ensure the keyboard control rules work as needed.
 - Use benchmarks to measure the performance of your distributed program.
@@ -135,23 +143,18 @@ You need to submit a CONCISE (strictly max 6 pages) report which should cover th
 
 Functionality and Design: Outline what functionality you have implemented, which problems you have solved with your implementations and how your program is designed to solve the problems efficiently and effectively.
 
-Critical Analysis: Describe briefly the other experiments and analysis you carried out, provide a selection of appropriate results. Keep a history of your implementations and provide benchmark results from various stages. Explain and analyse the benchmark results obtained. Analyse the important factors responsible for virtues and limitations of your implementations. 
+Critical Analysis: Describe briefly the other experiments and analysis you carried out, provide a selection of appropriate results. Keep a history of your implementations and provide benchmark results from various stages. Explain and analyse the benchmark results obtained. Analyse the important factors responsible for virtues and limitations of your implementations.
 
 Make sure your team’s names and user names appear on page 1 of the report. Don't include a cover page.
 
 ## Viva
 
-You will be required to demostrate your implementations in the viva.This will include running tests as well as showing PGM image output and keyboard control.
+You will be required to demostrate your implementations in the viva. This will include running tests as well as showing PGM image output and working keyboard control.
 
-As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report. 
+As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report.
 
-
-## Submission Mistakes
-
-[TODO]
+All vivas will run in Week 11.
 
 ## Workload and Time Management
 
-[TODO] - Expected time to complete?
-
-It is important to carefully manage your time for this assignment. You should not spend much over 25 hours on this task, this is about  5h per week over 5 weeks including labs. Do not spend hours trying to debug on your own; use pair programming, seek help from our teaching assistants during scheduled labs, use the forum, or see a lecturer.
+It is important to carefully manage your time for this assignment. Do not spend hours trying to debug on your own; use pair programming, seek help from our teaching assistants during scheduled labs and ask questions on Teams.
