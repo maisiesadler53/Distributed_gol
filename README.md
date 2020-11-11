@@ -122,7 +122,7 @@ GoL logic that evolves a board and produces images. You must be able to run the
 SDL controller as a client on a local machine, and the GoL engine as a server on
 an AWS node.
 
-Start by implementing a basic controller which can tell the logc engine to evolve Game of Life for the number of turns specified in `gol.Params.Turns`. Test your implementation using `go test -v -run=TestGol/-1$` *on the controller*.
+Start by implementing a basic controller which can tell the logic engine to evolve Game of Life for the number of turns specified in `gol.Params.Turns`. Test your implementation using `go test -v -run=TestGol/-1$` *on the controller*.
 
 You should report the number of cells that are still alive *every 2 seconds* to the local controller. The controller should then send an `AliveCellsCount` event to the `events` channel. Test your implementation using `go test -v -run=TestAlive` *on the controller*.
 
