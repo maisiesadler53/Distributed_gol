@@ -29,17 +29,24 @@ To help you along, you are given a simple skeleton project. The skeleton include
 
 You **must not** modify any of the files ending in `_test.go`. We will be using these tests to judge the correctness of your implementation.
 
+The skeleton code uses SDL. This is a basic graphics library which you already used in Imperative Programming unit. To install the library follow the following instructions:
+
+- **Linux Lab Machines** - SDL should already be installed and working.
+- **Personal Ubuntu PCs** - `sudo apt install libsdl2-dev`
+- **MacOS** - Use the official [`.dmg` installer](https://www.libsdl.org/download-2.0.php).
+- **Other** - Consult the [official documentation](https://wiki.libsdl.org/Installation).
+
 ### Submission
 
 The coursework requires two independent implementations. You will be required to submit **both** implementations (assuming both were attempted). Every student is required to upload their full work to Blackboard. There will be three sperate submissions points on Blackboard - one for the report and two for each implementation.
 
-For the report you must submit a single file called `report.pdf`.
-
-For the parallel implementation you must submit a single zip file called `parallel.zip`. It must contain all the code required to compile and run the program.
-
-For the distributed implementation you must submit a single zip file called `distributed.zip`. It must contain all the code required to compile and run the program.
+- For the report you must submit a single file called `report.pdf`.
+- For the parallel implementation you must submit a single zip file called `parallel.zip`. It must contain all the code required to compile and run the program.
+- For the distributed implementation you must submit a single zip file called `distributed.zip`. It must contain all the code required to compile and run the program.
 
 Submitting different filenames or file formats (e.g. `.docx`, `.tex`, `.7z` or `.rar`) will result in a mark penalty.
+
+You should be using `git` for version control, however, please don't include your `.git` directory in your submission. You can generate a correct archive using the command `git archive -o [FILENAME].zip HEAD`. 
 
 Make sure you submit it early (not last minute!) to avoid upload problems. **Each team member has to upload an identical copy of the team's work.**
 
