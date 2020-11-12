@@ -73,6 +73,14 @@ func (w *Window) SetPixel(x, y int) {
 	w.pixels[4*(y*width+x)+3] = 0xFF
 }
 
+func (w *Window) FlipPixel(x, y int) {
+	width := int(w.Width)
+	w.pixels[4*(y*width+x)+0] = ^w.pixels[4*(y*width+x)+0]
+	w.pixels[4*(y*width+x)+1] = ^w.pixels[4*(y*width+x)+1]
+	w.pixels[4*(y*width+x)+2] = ^w.pixels[4*(y*width+x)+2]
+	w.pixels[4*(y*width+x)+3] = ^w.pixels[4*(y*width+x)+3]
+}
+
 func (w *Window) ClearPixels() {
 	for i := range w.pixels {
 		w.pixels[i] = 0

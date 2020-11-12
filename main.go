@@ -6,11 +6,9 @@ import (
 	"runtime"
 	"uk.ac.bris.cs/gameoflife/gol"
 	"uk.ac.bris.cs/gameoflife/sdl"
-	"uk.ac.bris.cs/gameoflife/util"
 )
 
-// main is the function called when starting Game of Life with `go run .`
-// DO NOT MODIFY.
+// main is the function called when starting Game of Life with 'go run .'
 func main() {
 	runtime.LockOSThread()
 	var params gol.Params
@@ -36,21 +34,18 @@ func main() {
 	flag.IntVar(
 		&params.Turns,
 		"turns",
-		500,
-		"Specify the number of turns to run. Defaults to 500.")
+		10000000000,
+		"Specify the number of turns to process. Defaults to 10000000000.")
 
 	flag.Parse()
 
 	fmt.Println("Threads:", params.Threads)
 	fmt.Println("Width:", params.ImageWidth)
 	fmt.Println("Height:", params.ImageHeight)
-	fmt.Println("Turns:", params.Turns)
 
 	keyPresses := make(chan rune, 10)
-	aliveCells := make(chan []util.Cell)
+	events := make(chan gol.Event, 1000)
 
-	// DO NOT MODIFY.
-	gol.Run(params, aliveCells, keyPresses)
-	// DO NOT MODIFY.
-	sdl.Start(params, aliveCells, keyPresses)
+	gol.Run(params, events, keyPresses)
+	sdl.Start(params, events, keyPresses)
 }
