@@ -40,9 +40,9 @@ The skeleton code uses SDL. This is a basic graphics library which you already u
 
 The coursework requires two independent implementations. You will be required to submit **both** implementations (assuming both were attempted). Every student is required to upload their full work to Blackboard. There will be three sperate submissions points on Blackboard - one for the report and two for each implementation.
 
-- For the report you must submit a single file called `report.pdf`.
-- For the parallel implementation you must submit a single zip file called `parallel.zip`. It must contain all the code required to compile and run the program.
-- For the distributed implementation you must submit a single zip file called `distributed.zip`. It must contain all the code required to compile and run the program.
+- For the report, you must submit a single file called `report.pdf`.
+- For the parallel implementation, you must submit a single zip file called `parallel.zip`. It must contain all the code required to compile and run the program.
+- For the distributed implementation, you must submit a single zip file called `distributed.zip`. It must contain all the code required to compile and run the program.
 
 Submitting different filenames or file formats (e.g. `.docx`, `.tex`, `.7z` or `.rar`) will result in a mark penalty.
 
@@ -52,7 +52,7 @@ Make sure you submit it early (not last minute!) to avoid upload problems. **Eac
 
 ## Stage 1 - Parallel Implementation
 
-In this stage you are required to write code to evolve Game of Life using multiple worker goroutines on a single machine. Below are some suggested steps to help you get started. You are *not* required to follow them. Your implementation will be marked against the success criteria outlined below.
+In this stage, you are required to write code to evolve Game of Life using multiple worker goroutines on a single machine. Below are some suggested steps to help you get started. You are *not* required to follow them. Your implementation will be marked against the success criteria outlined below.
 
 ### Step 1
 
@@ -82,7 +82,7 @@ Test your code using `go test -v -run=TestPgm`. Finally, run `go test -v` and ma
 
 ### Step 5
 
-Implement logic to visualise the state of the game using SDL. Also implement the following control rules. Note that the goroutine running SDL provides you with a channel containing the relevant keypresses.
+Implement logic to visualise the state of the game using SDL. Also, implement the following control rules. Note that the goroutine running SDL provides you with a channel containing the relevant keypresses.
 
 - If `s` is pressed, generate a PGM file with the current state of the board.
 - If `q` is pressed, generate a PGM file with the current state of the board and then terminate the program. Your program should *not* continue to execute all turns set in `gol.Params.Turns`.
@@ -108,17 +108,17 @@ Test the visualisation and control rules by running `go run .`
 
 ## Stage 2 - Distributed Implementation
 
-In this stage you are required to create an implementation that uses a number of
+In this stage, you are required to create an implementation that uses a number of
 AWS nodes to cooperatively calculate the new state of the Game of Life board,
 and communicate state between machines over a network.  Below is a series of
 suggested steps for approaching the problem, but you are *not* required to
 follow this sequence, and can jump straight to implementing the more advanced
-versions of system if you feel confident about it.
+versions of the system if you feel confident about it.
 
 ### Step 1
 
 Implement the Game of Life logic as described above, in a single-machine
-implementation that can serve as a starting-point for a distributed version. 
+implementation that can serve as a starting point for a distributed version. 
 
 You should be able to test your serial code using `go test -v -run=TestGol/-1$` and all tests should pass.
 
@@ -153,7 +153,7 @@ Test the control rules by running `go run .`.
 
 Split up the computation of the GoL board state (from the GoL server) across
 multiple worker machines (AWS nodes).  You will need some means of distributing
-work between multiple AWS machines and gathering results together in one place,
+work between multiple AWS machines and gathering results together in one place
 while avoiding any errors in the collected board state.  Try to design your
 solution so it takes advantage of the possible *scalability* of many worker
 machines.
@@ -207,7 +207,7 @@ You will receive a mark out of 100 for this coursework.
 
 ### Parallel Implementation (35 marks)
 
-40% - You must be able to demonstrate a parallel Game of Life implementation (see Step 2). The number of threads *cannot* be hardocoded but it may be the case that only some configurations are working (e.g it's only working if the number of threads is a power of 2).
+40% - You must be able to demonstrate a parallel Game of Life implementation (see Step 2). The number of threads *cannot* be hardcoded but it may be the case that only some configurations are working (e.g it's only working if the number of threads is a power of 2).
 
 70% - Satisfy *all* success criteria for this stage.
 
@@ -223,14 +223,14 @@ You need to submit a CONCISE (**strictly** max 6 pages) report which should cove
 
 Functionality and Design: Outline what functionality you have implemented, which problems you have solved with your implementations and how your program is designed to solve the problems efficiently and effectively.
 
-Critical Analysis: Describe the experiments and analysis you carried out. Provide a selection of appropriate results. Keep a history of your implementations and provide benchmark results from various stages. Explain and analyse the benchmark results obtained. Analyse the important factors responsible for virtues and limitations of your implementations.
+Critical Analysis: Describe the experiments and analysis you carried out. Provide a selection of appropriate results. Keep a history of your implementations and provide benchmark results from various stages. Explain and analyse the benchmark results obtained. Analyse the important factors responsible for the virtues and limitations of your implementations.
 
 Make sure your team member’s names and user names appear on page 1 of the report. **Do not include a cover page.**
 
 ## Viva
 
-You will be required to demostrate your implementations in a viva. This will include running tests as well as showing PGM image output and working keyboard control.
+You will be required to demonstrate your implementations in a viva. This will include running tests as well as showing PGM image output and working keyboard control.
 
 As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report.
 
-All vivas will run online in Week 11. There is no seperate viva mark. However, it will affect the other marks.
+All vivas will run online in Week 11. There is no separate viva mark. However, it will affect the other marks.
