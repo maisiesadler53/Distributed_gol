@@ -195,8 +195,9 @@ communicating.
 - Fault tolerance.
 - Parallel distributed system with multiple worker threads per machine using
   common comms.
-- Live viewing of game.
+- Live viewing of the Distributed Game of Life on the local SDL controller.
 
+There are many other possible extensions to Game of Life. If you'd like to implement something that isn't an option above you're welcome to do so, but please speak to a lecturer first.
 
 -----------------------------------------------------------------------
 
