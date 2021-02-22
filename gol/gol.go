@@ -15,9 +15,12 @@ func Run(p Params, events chan<- Event, keyPresses <-chan rune) {
 	ioIdle := make(chan bool)
 
 	distributorChannels := distributorChannels{
-		events,
-		ioCommand,
-		ioIdle,
+		events:     events,
+		ioCommand:  ioCommand,
+		ioIdle:     ioIdle,
+		ioFilename: nil,
+		ioOutput:   nil,
+		ioInput:    nil,
 	}
 	go distributor(p, distributorChannels)
 

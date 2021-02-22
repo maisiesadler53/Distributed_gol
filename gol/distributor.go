@@ -1,9 +1,12 @@
 package gol
 
 type distributorChannels struct {
-	events    chan<- Event
-	ioCommand chan<- ioCommand
-	ioIdle    <-chan bool
+	events     chan<- Event
+	ioCommand  chan<- ioCommand
+	ioIdle     <-chan bool
+	ioFilename chan<- string
+	ioOutput   chan<- uint8
+	ioInput    <-chan uint8
 }
 
 // distributor divides the work between workers and interacts with other goroutines.
