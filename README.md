@@ -1,6 +1,6 @@
 # CSA Coursework: Game of Life
 
-**IMPORTANT: Monday 16.11 at 10:00 - COURSEWORK Q&A on Teams**
+**[Coursework Q&A Recording](https://web.microsoftstream.com/video/ab833321-3a78-4c83-b87e-16ce1b5c244f)**
 
 This is the Computer Systems A summative coursework. The coursework is worth 80% of the unit mark. It is to be completed in your programming pairs. You must report any change to your pairing to the unit director *before* starting your assignment. It runs over 4 weeks and the deadline for submitting all your work is **Friday 11 December 13:00**.
 
@@ -29,16 +29,20 @@ To help you along, you are given a simple skeleton project. The skeleton include
 
 You **must not** modify any of the files ending in `_test.go`. We will be using these tests to judge the correctness of your implementation.
 
+The skeleton code starts three goroutines. The diagram below shows how they should interact with each other (for the parallel implementation). Note that not all channels linking IO and the Distributor have been initialised for you. You will need to make them and add them to respective structs.
+
+![Goroutines](content/goroutines.png)
+
 The skeleton code uses SDL. This is a basic graphics library which you already used in Imperative Programming unit. To install the library follow the following instructions:
 
 - **Linux Lab Machines** - SDL should already be installed and working.
 - **Personal Ubuntu PCs** - `sudo apt install libsdl2-dev`
-- **MacOS** - Use the official [`.dmg` installer](https://www.libsdl.org/download-2.0.php).
+- **MacOS** - `brew install sdl2` or use the official [`.dmg` installer](https://www.libsdl.org/download-2.0.php).
 - **Other** - Consult the [official documentation](https://wiki.libsdl.org/Installation).
 
 ### Submission
 
-The coursework requires two independent implementations. You will be required to submit **both** implementations (assuming both were attempted). Every student is required to upload their full work to Blackboard. There will be three sperate submissions points on Blackboard - one for the report and two for each implementation.
+The coursework requires two independent implementations. You will be required to submit **both** implementations (assuming both were attempted). Every student is required to upload their full work to Blackboard. There will be three separate submissions points on Blackboard - one for the report and two for each implementation.
 
 - For the report, you must submit a single file called `report.pdf`.
 - For the parallel implementation, you must submit a single zip file called `parallel.zip`. It must contain all the code required to compile and run the program.
@@ -159,6 +163,8 @@ solution so it takes advantage of the possible *scalability* of many worker
 machines.
 
 Make sure to keep the communication between nodes as efficient as possible. For example, consider a halo exchange scheme where only the edges are communicated between the nodes.
+
+*We created a [5120x5120 pgm file](https://uob-my.sharepoint.com/:u:/g/personal/kg17815_bristol_ac_uk/EUWlZMH2MetHuNF8Ua3nb7EBx-LJqqU6OeFAW0SuHvr0pw?e=hWK1W0) if you wish to test or benchmark your solution with a very large image.*
 
 ### Step 4
 
