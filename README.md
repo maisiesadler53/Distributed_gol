@@ -29,10 +29,6 @@ To help you along, you are given a simple skeleton project. The skeleton include
 
 You **must not** modify any of the files ending in `_test.go`. We will be using these tests to judge the correctness of your implementation.
 
-The skeleton code starts three goroutines. The diagram below shows how they should interact with each other (for the parallel implementation). Note that not all channels linking IO and the Distributor have been initialised for you. You will need to make them and add them to respective structs.
-
-![Goroutines](content/goroutines.png)
-
 The skeleton code uses SDL. This is a basic graphics library which you already used in Imperative Programming unit. To install the library follow the following instructions:
 
 - **Linux Lab Machines** - SDL should already be installed and working.
@@ -60,11 +56,17 @@ In this stage, you are required to write code to evolve Game of Life using multi
 
 ### Step 1
 
+The skeleton code starts three goroutines. The diagram below shows how they should interact with each other (for the parallel implementation). Note that not all channels linking IO and the Distributor have been initialised for you. You will need to make them and add them to respective structs.
+
+![Step 1](content/cw_diagrams-Parallel_1.png)
+
 Implement the Game of Life logic as it was described in the task introduction. We suggest starting with a single-threaded implementation that will serve as a starting point in subsequent steps. Your Game of Life should evolve for the number of turns specified in `gol.Params.Turns`.
 
 Test your serial, single-threaded code using `go test -v -run=TestGol/-1$`. All the tests ran should pass.
 
 ### Step 2
+
+![Step 2](content/cw_diagrams-Parallel_2.png)
 
 Parallelise your Game of Life so that it uses worker threads to calculate the new state of the board. You should implement a distributor that tasks different worker threads to operate on different parts of the image in parallel. The number of worker threads you should create is specified in `gol.Params.Threads`.
 
@@ -74,17 +76,23 @@ Test your code using `go test -v -run=TestGol`. You can use tracing to verify th
 
 ### Step 3
 
+![Step 3](content/cw_diagrams-Parallel_3.png)
+
 The lab sheets included the use of a timer. Now using a ticker, report the number of cells that are still alive *every 2 seconds*. To report the count use the `AliveCellsCount` event.
 
 Test your code using `go test -v -run=TestAlive`.
 
 ### Step 4
 
+![Step 4](content/cw_diagrams-Parallel_4.png)
+
 Implement logic to output the state of the board after all turns have completed as a PGM image.
 
 Test your code using `go test -v -run=TestPgm`. Finally, run `go test -v` and make sure all tests are passing.
 
 ### Step 5
+
+![Step 5](content/cw_diagrams-Parallel_5.png)
 
 Implement logic to visualise the state of the game using SDL. Also, implement the following control rules. Note that the goroutine running SDL provides you with a channel containing the relevant keypresses.
 
@@ -121,39 +129,48 @@ versions of the system if you feel confident about it.
 
 ### Step 1
 
-Implement the Game of Life logic as described above, in a single-machine
-implementation that can serve as a starting point for a distributed version. 
+![Step 1](content/cw_diagrams-Distributed_1.png)
 
-You should be able to test your serial code using `go test -v -run=TestGol/-1$` and all tests should pass.
+Begin by ensuring you have a working single-threaded, single-machine implementation. You should be able to test your serial code using `go test -v -run=TestGol/-1$` and all tests should pass.
+
+Separate your implementation into two components. One component, the local controller, will be responsible for IO and capturing keypresses. The second component, the GOL Engine, will be responsible for actually processing the turns of Game of Life. You must be able to run the local controller as a client on a local machine, and the GoL engine as a server on an AWS node.
+
+Start by implementing a basic controller which can tell the logic engine to evolve Game of Life for the number of turns specified in `gol.Params.Turns`. You can achieve this by implementing a single, blocking RPC call to process all requested turns.
+
+Test your implementation using `go test -v -run=TestGol/-1$` *on the controller*.
 
 ### Step 2
 
-Separate your SDL controller (which captures keypresses from a user) from the
-GoL logic that evolves a board and produces images. You must be able to run the
-SDL controller as a client on a local machine, and the GoL engine as a server on
-an AWS node.
+![Step 2](content/cw_diagrams-Distributed_2.png)
 
-Start by implementing a basic controller which can tell the logic engine to evolve Game of Life for the number of turns specified in `gol.Params.Turns`. Test your implementation using `go test -v -run=TestGol/-1$` *on the controller*.
+You should report the number of cells that are still alive *every 2 seconds* to the local controller. The controller should then send an `AliveCellsCount` event to the `events` channel. 
 
-You should report the number of cells that are still alive *every 2 seconds* to the local controller. The controller should then send an `AliveCellsCount` event to the `events` channel. Test your implementation using `go test -v -run=TestAlive` *on the controller*.
+Test your implementation using `go test -v -run=TestAlive` *on the controller*.
 
-The local controller should be able to output the state of the board after all turns have completed as a PGM image. Test your implementation using `go test -v -run=TestPgm/-1$` *on the controller*.
+### Step 3
+
+![Step 3](content/cw_diagrams-Distributed_3.png)
+
+The local controller should be able to output the state of the board after all turns have completed as a PGM image. 
+
+Test your implementation using `go test -v -run=TestPgm/-1$` *on the controller*.
+
+### Step 4
+
+![Step 4](content/cw_diagrams-Distributed_4.png)
 
 Finally, the local controller should be able to manage the behaviour of the GoL engine according to the following rules: 
 
-- If `s` is pressed, the controller should generate a PGM file with the current state
-  of the board.
-- If `q` is pressed, close the controller client program without causing an
-  error on the GoL server. A new controller should be able to take over
-interaction with the GoL engine.
-- If `p` is pressed, pause the processing *on the AWS node* and have the
-  *controller* print the current turn that is being processed. If `p` is pressed
-again resume the processing and have the controller print `"Continuing"`. It is
-*not* necessary for `q` and `s` to work while the execution is paused.
+- If `s` is pressed, the controller should generate a PGM file with the current state of the board.
+- If `q` is pressed, close the controller client program without causing an error on the GoL server. A new controller should be able to take over interaction with the GoL engine.
+- If `k` is pressed, all components of the distributed system are shut down cleanly, and the system outputs a PGM image of the latest state.
+- If `p` is pressed, pause the processing *on the AWS node* and have the *controller* print the current turn that is being processed. If `p` is pressed again resume the processing and have the controller print `"Continuing"`. It is *not* necessary for `q` and `s` to work while the execution is paused.
 
 Test the control rules by running `go run .`.
 
-### Step 3
+### Step 5
+
+![Step 5](content/cw_diagrams-Distributed_5.png)
 
 Split up the computation of the GoL board state (from the GoL server) across
 multiple worker machines (AWS nodes).  You will need some means of distributing
@@ -165,12 +182,6 @@ machines.
 Make sure to keep the communication between nodes as efficient as possible. For example, consider a halo exchange scheme where only the edges are communicated between the nodes.
 
 *We created a [5120x5120 pgm file](https://uob-my.sharepoint.com/:u:/g/personal/kg17815_bristol_ac_uk/EUWlZMH2MetHuNF8Ua3nb7EBx-LJqqU6OeFAW0SuHvr0pw?e=hWK1W0) if you wish to test or benchmark your solution with a very large image.*
-
-### Step 4
-
-Alter your keypress logic so that when a `k` keypress is input on the controller
-client, all components of the distributed system are shut down cleanly, and the
-system outputs a PGM image of the latest state. 
 
 
 ### Success Criteria
