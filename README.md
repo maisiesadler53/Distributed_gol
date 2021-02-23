@@ -56,7 +56,7 @@ In this stage, you are required to write code to evolve Game of Life using multi
 
 ### Step 1
 
-The skeleton code starts three goroutines. The diagram below shows how they should interact with each other (for the parallel implementation). Note that not all channels linking IO and the Distributor have been initialised for you. You will need to make them and add them to respective structs.
+The skeleton code starts three goroutines. The diagram below shows how they should interact with each other. Note that not all channels linking IO and the Distributor have been initialised for you. You will need to make them and add them to respective structs.
 
 ![Step 1](content/cw_diagrams-Parallel_1.png)
 
