@@ -2,7 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"strconv"
+	"strings"
 	"testing"
+
 	"uk.ac.bris.cs/gameoflife/gol"
 	"uk.ac.bris.cs/gameoflife/util"
 )
@@ -17,7 +21,7 @@ func TestGol(t *testing.T) {
 	for _, p := range tests {
 		for _, turns := range []int{0, 1, 100} {
 			p.Turns = turns
-			expectedAlive := util.ReadAliveCells(
+			expectedAlive := readAliveCells(
 				"check/images/"+fmt.Sprintf("%vx%vx%v.pgm", p.ImageWidth, p.ImageHeight, turns),
 				p.ImageWidth,
 				p.ImageHeight,
@@ -79,4 +83,47 @@ func assertEqualBoard(t *testing.T, given, expected []util.Cell, p gol.Params) b
 	}
 
 	return true
+}
+
+func readAliveCells(path string, width, height int) []util.Cell {
+	data, ioError := ioutil.ReadFile(path)
+	util.Check(ioError)
+
+	fields := strings.Fields(string(data))
+
+	if fields[0] != "P5" {
+		panic("Not a pgm file")
+	}
+
+	imageWidth, _ := strconv.Atoi(fields[1])
+	if imageWidth != width {
+		panic("Incorrect width")
+	}
+
+	imageHeight, _ := strconv.Atoi(fields[2])
+	if imageHeight != height {
+		panic("Incorrect height")
+	}
+
+	maxval, _ := strconv.Atoi(fields[3])
+	if maxval != 255 {
+		panic("Incorrect maxval/bit depth")
+	}
+
+	image := []byte(fields[4])
+
+	var cells []util.Cell
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			cell := image[0]
+			if cell != 0 {
+				cells = append(cells, util.Cell{
+					X: x,
+					Y: y,
+				})
+			}
+			image = image[1:]
+		}
+	}
+	return cells
 }

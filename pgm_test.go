@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 	"uk.ac.bris.cs/gameoflife/gol"
-	"uk.ac.bris.cs/gameoflife/util"
 )
 
 // Pgm tests 16x16, 64x64 and 512x512 image output files on 0, 1 and 100 turns using 1-16 worker threads.
@@ -17,7 +16,7 @@ func TestPgm(t *testing.T) {
 	for _, p := range tests {
 		for _, turns := range []int{0, 1, 100} {
 			p.Turns = turns
-			expectedAlive := util.ReadAliveCells(
+			expectedAlive := readAliveCells(
 				"check/images/"+fmt.Sprintf("%vx%vx%v.pgm", p.ImageWidth, p.ImageHeight, turns),
 				p.ImageWidth,
 				p.ImageHeight,
@@ -30,7 +29,7 @@ func TestPgm(t *testing.T) {
 					gol.Run(p, events, nil)
 					for range events {
 					}
-					cellsFromImage := util.ReadAliveCells(
+					cellsFromImage := readAliveCells(
 						"out/"+fmt.Sprintf("%vx%vx%v.pgm", p.ImageWidth, p.ImageHeight, turns),
 						p.ImageWidth,
 						p.ImageHeight,
