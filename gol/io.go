@@ -42,7 +42,9 @@ const (
 func (io *ioState) writePgmImage() {
 	_ = os.Mkdir("out", os.ModePerm)
 
+	// Request a filename from the distributor.
 	filename := <-io.channels.filename
+
 	file, ioError := os.Create("out/" + filename + ".pgm")
 	util.Check(ioError)
 	defer file.Close()
@@ -86,7 +88,10 @@ func (io *ioState) writePgmImage() {
 
 // readPgmImage opens a pgm file and sends its data as an array of bytes.
 func (io *ioState) readPgmImage() {
+
+	// Request a filename from the distributor.
 	filename := <-io.channels.filename
+
 	data, ioError := ioutil.ReadFile("images/" + filename + ".pgm")
 	util.Check(ioError)
 
@@ -129,6 +134,7 @@ func startIo(p Params, c ioChannels) {
 
 	for {
 		select {
+		// Block and wait for requests from the distributor
 		case command := <-io.channels.command:
 			switch command {
 			case ioInput:
