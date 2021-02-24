@@ -56,11 +56,15 @@ In this stage, you are required to write code to evolve Game of Life using multi
 
 ### Step 1
 
-The skeleton code starts three goroutines. The diagram below shows how they should interact with each other. Note that not all channels linking IO and the Distributor have been initialised for you. You will need to make them and add them to respective structs.
+Implement the Game of Life logic as it was described in the task introduction. We suggest starting with a single-threaded implementation that will serve as a starting point in subsequent steps. Your Game of Life should evolve for the number of turns specified in `gol.Params.Turns`. Your Game of Life should evolve the correct image specified by  `gol.Params.ImageWidth` and `gol.Params.ImageHeight`.
+
+The skeleton code starts three goroutines. The diagram below shows how they should interact with each other. Note that not all channels linking IO and the Distributor have been initialised for you. You will need to make them and add them to the `distributorChannels` and `ioChannels` structs. These structs are created in `gol/gol.go`.
 
 ![Step 1](content/cw_diagrams-Parallel_1.png)
 
-Implement the Game of Life logic as it was described in the task introduction. We suggest starting with a single-threaded implementation that will serve as a starting point in subsequent steps. Your Game of Life should evolve for the number of turns specified in `gol.Params.Turns`.
+You are not able to call methods directly on the IO goroutine. To use the IO, you will need to utilise channel communication. For reading in the initial PGM image, you will need the `command`, `filename` and `input` channels. Look at the file `gol/io.go` for details. The functions `io.readPgmImage` and `startIo` are particularly important in this step.
+
+Your Game of Life code will interact with the user or the unit tests using the `events` channel. All events are defined in the file `gol/event.go`. In this step, you will only be working with the unit test `TestGol`. Therefore, you only need to send the `FinalTurnComplete` event.
 
 Test your serial, single-threaded code using `go test -v -run=TestGol/-1$`. All the tests ran should pass.
 
@@ -94,7 +98,9 @@ Test your code using `go test -v -run=TestPgm`. Finally, run `go test -v` and ma
 
 ![Step 5](content/cw_diagrams-Parallel_5.png)
 
-Implement logic to visualise the state of the game using SDL. Also, implement the following control rules. Note that the goroutine running SDL provides you with a channel containing the relevant keypresses.
+Implement logic to visualise the state of the game using SDL. You will need to use `CellFlipped` and `TurnComplete` events to achieve this. Look at `sdl/loop.go` for details. Don't forget to send a CellFlipped event for all initially alive cells before processing any turns.
+
+Also, implement the following control rules. Note that the goroutine running SDL provides you with a channel containing the relevant keypresses.
 
 - If `s` is pressed, generate a PGM file with the current state of the board.
 - If `q` is pressed, generate a PGM file with the current state of the board and then terminate the program. Your program should *not* continue to execute all turns set in `gol.Params.Turns`.
@@ -231,7 +237,7 @@ You will receive a mark out of 100 for this coursework.
 
 ### Distributed Implementation (35 marks)
 
-40% - You must be able to demonstrate a distributed Game of Life implementation that is controlled by a locally running controller (see Step 2).
+40% - You must be able to demonstrate a distributed Game of Life implementation. It must be running a single AWS GoL Engine Node that is controlled by a locally running controller (see Step 1).
 
 70% - Satisfy *all* success criteria for this stage.
 
