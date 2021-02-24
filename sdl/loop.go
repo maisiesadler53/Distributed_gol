@@ -6,7 +6,7 @@ import (
 	"uk.ac.bris.cs/gameoflife/gol"
 )
 
-func Start(p gol.Params, events <-chan gol.Event, keyPresses chan<- rune) {
+func Run(p gol.Params, events <-chan gol.Event, keyPresses chan<- rune) {
 	w := NewWindow(int32(p.ImageWidth), int32(p.ImageHeight))
 
 sdlLoop:

@@ -20,7 +20,7 @@ func TestTrace(t *testing.T) {
 	events := make(chan gol.Event)
 	err := trace.Start(f)
 	util.Check(err)
-	gol.Run(traceParams, events, nil)
+	go gol.Run(traceParams, events, nil)
 	for range events {
 	}
 	trace.Stop()

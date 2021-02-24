@@ -22,7 +22,7 @@ func TestAlive(t *testing.T) {
 	}
 	alive := readAliveCounts(p.ImageWidth, p.ImageHeight)
 	events := make(chan gol.Event)
-	gol.Run(p, events, nil)
+	go gol.Run(p, events, nil)
 
 	implemented := make(chan bool)
 	go func() {
