@@ -115,6 +115,7 @@ Test the visualisation and control rules by running `go run .`
 - Display the live progress of the game using SDL.
 - Ensure that all keyboard control rules work correctly.
 - Use benchmarks to measure the performance of your parallel program.
+- The implementation must scale well with the number of worker threads.
 - The implementation must be free of deadlocks and race conditions.
 
 ### In your Report
@@ -213,15 +214,37 @@ communicating.
 - Identify how components of your system disappearing (e.g., broken network
   connections) might affect the overall system and its results.
 
-
 ## Extensions
 
-- Fault tolerance.
-- Parallel distributed system with multiple worker threads per machine using
-  common comms.
-- Live viewing of the Distributed Game of Life on the local SDL controller.
+Below are suggested extensions. They vary in difficulty. There are many other possible extensions to Game of Life. If you'd like to implement something that isn't an option below you're welcome to do so, but please speak to a lecturer first.
 
-There are many other possible extensions to Game of Life. If you'd like to implement something that isn't an option above you're welcome to do so, but please speak to a lecturer first.
+### Halo Exchange
+
+![Extension 1](content/cw_diagrams-Extensions_1.png)
+
+Recall that to process an iteration of Game of Life, each worker needs two extra rows (or columns). These are known as the halo regions. They need to be updated with data from neighbouring workers to process each iteration correctly. The easiest solution is to have all workers resync with a central distributor node on every iteration. This introduces a heavy communication overhead (which you might be able to measure).
+
+Implement a Halo Exchange scheme, where workers communicate the halo regions directly to each other. Analyse the performance of your new solution and compare it with your previous implementation.
+
+### Parallel Distributed System
+
+![Extension 2](content/cw_diagrams-Extensions_2.png)
+
+Add parallel workers within each distributed AWS Node.
+
+Analyse the performance of your new solution and compare it with your previous implementation. Use various provided PGM images and analyse the effect on performance in context of the image size.
+
+### SDL Live View of Distributed Implementation
+
+Instead of showing a blank SDL window in your local controller, add support for a Live View, in a similar way to the parallel implementation. Try to keep your implementation as efficient as possible.
+
+Analyse the performance of your new solution and compare it with your previous implementation. Quantify and explain the overhead (if any) added by the Live View.
+
+### Fault Tolerance
+
+Add fault tolerance to your Distributed Implementation.
+
+In your report, explain the design of your fault tolerance mechanism. Conduct experiments to verify the effectiveness of your fault tolerance approach.
 
 -----------------------------------------------------------------------
 
@@ -231,7 +254,15 @@ You will receive a mark out of 100 for this coursework.
 
 ### Parallel Implementation (35 marks)
 
-40% - You must be able to demonstrate a parallel Game of Life implementation (see Step 2). The number of threads *cannot* be hardcoded but it may be the case that only some configurations are working (e.g it's only working if the number of threads is a power of 2).
+20% - Single-threaded implementation.
+
+30% - Parallel implementation implementation with the number of workers hardcoded to a non-1 value.
+
+40% - Parallel Game of Life implementation (see Step 2). The number of threads *cannot* be hardcoded but it may be the case that only some configurations are working (e.g it's only working if the number of threads is a power of 2).
+
+50% - Parallel Game of Life implementation, all configurations working.
+
+Additional marks are available for satisfying further success criteria, up to:
 
 70% - Satisfy *all* success criteria for this stage.
 
