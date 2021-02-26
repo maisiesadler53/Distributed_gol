@@ -246,6 +246,12 @@ Add fault tolerance to your Distributed Implementation.
 
 In your report, explain the design of your fault tolerance mechanism. Conduct experiments to verify the effectiveness of your fault tolerance approach.
 
+### Memory Sharing
+
+Redesign your parallel implementation to use pure memory sharing. Replace *all* channels with traditional synchronisation mechanisms (mutexes, sempahores, condition variables). We recommend first replacing any channels used between the workers and the distributor. Then remove channels linking the distributor with the IO and with SDL. You should still keep them as seperate goroutines. Your solution must be free of deadlocks and race conditions.
+
+Analyse the performance of your new solution and compare it with your previous implementation. Explain any differences observed.
+
 -----------------------------------------------------------------------
 
 ## Mark Scheme
