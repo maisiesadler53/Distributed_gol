@@ -294,4 +294,3 @@ You will be required to demonstrate your implementations in a viva. This will in
 
 As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report.
 
-All vivas will run online in Week 11. There is no separate viva mark. However, it will affect the other marks.
