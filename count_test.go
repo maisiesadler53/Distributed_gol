@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
 	"uk.ac.bris.cs/gameoflife/gol"
 	"uk.ac.bris.cs/gameoflife/util"
 )
@@ -22,7 +23,8 @@ func TestAlive(t *testing.T) {
 	}
 	alive := readAliveCounts(p.ImageWidth, p.ImageHeight)
 	events := make(chan gol.Event)
-	go gol.Run(p, events, nil)
+	keyPresses := make(chan rune, 2)
+	go gol.Run(p, events, keyPresses)
 
 	implemented := make(chan bool)
 	go func() {
@@ -59,6 +61,7 @@ func TestAlive(t *testing.T) {
 			}
 		}
 		if i >= 5 {
+			keyPresses <- 'q'
 			return
 		}
 	}
