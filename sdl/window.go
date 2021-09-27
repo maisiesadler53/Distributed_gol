@@ -1,6 +1,8 @@
 package sdl
 
 import (
+	"fmt"
+
 	"github.com/veandco/go-sdl2/sdl"
 	"uk.ac.bris.cs/gameoflife/util"
 )
@@ -74,6 +76,10 @@ func (w *Window) SetPixel(x, y int) {
 }
 
 func (w *Window) FlipPixel(x, y int) {
+	if x < 0 || y < 0 || x >= int(w.Width) || y >= int(w.Height) {
+		panic(fmt.Sprintf("CellFlipped event at (%d, %d) is outside the bounds of the window.", x, y))
+	}
+
 	width := int(w.Width)
 	w.pixels[4*(y*width+x)+0] = ^w.pixels[4*(y*width+x)+0]
 	w.pixels[4*(y*width+x)+1] = ^w.pixels[4*(y*width+x)+1]
