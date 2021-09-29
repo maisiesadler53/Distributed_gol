@@ -3,14 +3,11 @@ package main
 import (
 	"fmt"
 	"time"
-	// "io/ioutil"
-	// "strconv"
-	// "strings"
+	"os"
 	"testing"
 
 	"uk.ac.bris.cs/gameoflife/gol"
 	"uk.ac.bris.cs/gameoflife/sdl"
-	// "uk.ac.bris.cs/gameoflife/util"
 )
 
 var sdlEvents chan gol.Event
@@ -18,13 +15,17 @@ var sdlEvents chan gol.Event
 func TestMain(m *testing.M) {
 	p := gol.Params{ImageWidth: 512, ImageHeight: 512}
 	sdlEvents = make(chan gol.Event)
-	go m.Run()
+	result := make(chan int)
+	go func() {
+		result <- m.Run()
+	}()
 	sdl.Run(p, sdlEvents, nil)
+	os.Exit(<-result)
 }
 
-// TestGol tests 16x16, 64x64 and 512x512 images on 0, 1 and 100 turns using 1-16 worker threads.
+// TestSdl tests a 512x512 image for 100 turns using 8 worker threads.
 func TestSdl(t *testing.T) {
-	p := gol.Params{ImageWidth: 16, ImageHeight: 16, Turns: 100, Threads: 8}
+	p := gol.Params{ImageWidth: 512, ImageHeight: 512, Turns: 100, Threads: 8}
 	testName := fmt.Sprintf("%dx%dx%d-%d", p.ImageWidth, p.ImageHeight, p.Turns, p.Threads)
 	t.Run(testName, func(t *testing.T) {
 		events := make(chan gol.Event)
