@@ -38,6 +38,9 @@ sdlLoop:
 				w.FlipPixel(e.Cell.X, e.Cell.Y)
 			case gol.TurnComplete:
 				w.RenderFrame()
+			case gol.FinalTurnComplete:
+				w.Destroy()
+				break sdlLoop
 			default:
 				if len(event.String()) > 0 {
 					fmt.Printf("Completed Turns %-8v%v\n", event.GetCompletedTurns(), event)
