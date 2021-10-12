@@ -73,7 +73,7 @@ func TestSdl(t *testing.T) {
 					sdlEvents <- e
 					aliveCount := <-sdlAlive
 					if alive[turnNum] != aliveCount {
-						t.Log(fmt.Sprintf("Incorrect number of alive cells displayed. Was %d, should be %d.", aliveCount, alive[turnNum]))
+						t.Log(fmt.Sprintf("Incorrect number of alive cells displayed on turn %d. Was %d, should be %d.", turnNum, aliveCount, alive[turnNum]))
 						time.Sleep(5 * time.Second)
 						t.FailNow()
 					} 
