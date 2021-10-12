@@ -75,7 +75,8 @@ func TestSdl(t *testing.T) {
 					if alive[turnNum] != aliveCount {
 						t.Log(fmt.Sprintf("Incorrect number of alive cells displayed on turn %d. Was %d, should be %d.", turnNum, aliveCount, alive[turnNum]))
 						time.Sleep(5 * time.Second)
-						t.FailNow()
+						t.Fail()
+						sdlEvents <- gol.FinalTurnComplete{}
 					} 
 					turnNum++
 				case gol.FinalTurnComplete:
