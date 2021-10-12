@@ -11,15 +11,46 @@ import (
 )
 
 var sdlEvents chan gol.Event
+var sdlAlive chan int
 
 func TestMain(m *testing.M) {
 	p := gol.Params{ImageWidth: 512, ImageHeight: 512}
 	sdlEvents = make(chan gol.Event)
+	sdlAlive = make(chan int)
 	result := make(chan int)
 	go func() {
 		result <- m.Run()
 	}()
-	sdl.Run(p, sdlEvents, nil)
+	// sdl.Run(p, sdlEvents, nil)
+	w := sdl.NewWindow(int32(p.ImageWidth), int32(p.ImageHeight))
+
+sdlLoop:
+	for {
+		w.PollEvent()
+		select {
+		case event, ok := <-sdlEvents:
+			if !ok {
+				w.Destroy()
+				break sdlLoop
+			}
+			switch e := event.(type) {
+			case gol.CellFlipped:
+				w.FlipPixel(e.Cell.X, e.Cell.Y)
+			case gol.TurnComplete:
+				w.RenderFrame()
+				sdlAlive <- w.CountPixels()
+			case gol.FinalTurnComplete:
+				w.Destroy()
+				break sdlLoop
+			default:
+				if len(event.String()) > 0 {
+					fmt.Printf("Completed Turns %-8v%v\n", event.GetCompletedTurns(), event)
+				}
+			}
+		default:
+			break
+		}
+	}
 	os.Exit(<-result)
 }
 
@@ -27,7 +58,9 @@ func TestMain(m *testing.M) {
 func TestSdl(t *testing.T) {
 	p := gol.Params{ImageWidth: 512, ImageHeight: 512, Turns: 100, Threads: 8}
 	testName := fmt.Sprintf("%dx%dx%d-%d", p.ImageWidth, p.ImageHeight, p.Turns, p.Threads)
+	alive := readAliveCounts(p.ImageWidth, p.ImageHeight)
 	t.Run(testName, func(t *testing.T) {
+		turnNum := 0
 		events := make(chan gol.Event)
 		go gol.Run(p, events, nil)
 		time.Sleep(2 * time.Second)
@@ -38,6 +71,12 @@ func TestSdl(t *testing.T) {
 					sdlEvents <- e
 				case gol.TurnComplete:
 					sdlEvents <- e
+					if alive[turnNum] != <-sdlAlive {
+						t.Log("Incorrect number of alive cells displayed.")
+						time.Sleep(5 * time.Second)
+						t.FailNow()
+					} 
+					turnNum++
 				case gol.FinalTurnComplete:
 					final = true
 					sdlEvents <- e

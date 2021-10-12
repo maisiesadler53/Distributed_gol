@@ -87,6 +87,16 @@ func (w *Window) FlipPixel(x, y int) {
 	w.pixels[4*(y*width+x)+3] = ^w.pixels[4*(y*width+x)+3]
 }
 
+func (w *Window) CountPixels() int {
+	count := 0
+	for i := range w.pixels {
+		if w.pixels[i] == 0xFF {
+			count++
+		}
+	}
+	return count
+}
+
 func (w *Window) ClearPixels() {
 	for i := range w.pixels {
 		w.pixels[i] = 0
