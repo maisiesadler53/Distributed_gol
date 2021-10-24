@@ -34,7 +34,7 @@ The skeleton code uses SDL. This is a basic graphics library which you already u
 - **Linux Lab Machines** - SDL should already be installed and working.
 - **Personal Ubuntu PCs** - `sudo apt install libsdl2-dev`
 - **MacOS** - `brew install sdl2` or use the official [`.dmg` installer](https://www.libsdl.org/download-2.0.php).
-- **Other** - Consult the [official documentation](https://wiki.libsdl.org/Installation).
+- **Other** - Consult the [official documentation](https://wiki.libsdl.org/Installation) or see our [experimental instructions for running natively on Windows](content/windows_sdl_native.md)
 
 ### Submission
 
