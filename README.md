@@ -2,7 +2,7 @@
 
 **[Coursework Q&A Recording](https://web.microsoftstream.com/video/ab833321-3a78-4c83-b87e-16ce1b5c244f)**
 
-This is the Computer Systems A summative coursework. The coursework is worth 80% of the unit mark. It is to be completed in your programming pairs. You must report any change to your pairing to the unit director *before* starting your assignment. It runs over 4 weeks and the deadline for submitting all your work is **Friday 11 December 13:00**.
+This is the Computer Systems A summative coursework. The coursework is worth 80% of the unit mark. It is to be completed in your programming pairs. You must report any change to your pairing to the unit director *before* starting your assignment. It runs over 4 weeks (5 weeks including the reading week) and the deadline for submitting all your work is **Friday 3rd December 13:00**.
 
 Talk to each other regularly and make sure you manage your team well. Let us know about issues before they grow to affect your team’s performance. It is important to carefully manage your time for this assignment. Do not spend hours trying to debug on your own; use pair programming, seek help from our teaching assistants during scheduled labs and ask questions on Teams.
 
