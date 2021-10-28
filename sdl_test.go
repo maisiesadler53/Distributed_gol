@@ -1,10 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"time"
 	"os"
 	"testing"
+	"time"
 
 	"uk.ac.bris.cs/gameoflife/gol"
 	"uk.ac.bris.cs/gameoflife/sdl"
@@ -14,6 +15,9 @@ var sdlEvents chan gol.Event
 var sdlAlive chan int
 
 func TestMain(m *testing.M) {
+	noVis := flag.Bool("noVis", false,
+		"Disables the SDL window, so there is no visualisation during the tests.")
+	flag.Parse()
 	p := gol.Params{ImageWidth: 512, ImageHeight: 512}
 	sdlEvents = make(chan gol.Event)
 	sdlAlive = make(chan int)
@@ -22,7 +26,11 @@ func TestMain(m *testing.M) {
 		result <- m.Run()
 	}()
 	// sdl.Run(p, sdlEvents, nil)
-	w := sdl.NewWindow(int32(p.ImageWidth), int32(p.ImageHeight))
+	var w *sdl.Window = nil
+	fmt.Println(*noVis)
+	if !(*noVis) {
+		w = sdl.NewWindow(int32(p.ImageWidth), int32(p.ImageHeight))
+	}
 
 sdlLoop:
 	for {
@@ -67,21 +75,21 @@ func TestSdl(t *testing.T) {
 		final := false
 		for event := range events {
 			switch e := event.(type) {
-				case gol.CellFlipped:
-					sdlEvents <- e
-				case gol.TurnComplete:
-					turnNum++
-					sdlEvents <- e
-					aliveCount := <-sdlAlive
-					if alive[turnNum] != aliveCount {
-						t.Logf("Incorrect number of alive cells displayed on turn %d. Was %d, should be %d.", turnNum, aliveCount, alive[turnNum])
-						time.Sleep(5 * time.Second)
-						sdlEvents <- gol.FinalTurnComplete{}
-						t.FailNow()
-					} 
-				case gol.FinalTurnComplete:
-					final = true
-					sdlEvents <- e
+			case gol.CellFlipped:
+				sdlEvents <- e
+			case gol.TurnComplete:
+				turnNum++
+				sdlEvents <- e
+				aliveCount := <-sdlAlive
+				if alive[turnNum] != aliveCount {
+					t.Logf("Incorrect number of alive cells displayed on turn %d. Was %d, should be %d.", turnNum, aliveCount, alive[turnNum])
+					time.Sleep(5 * time.Second)
+					sdlEvents <- gol.FinalTurnComplete{}
+					t.FailNow()
+				}
+			case gol.FinalTurnComplete:
+				final = true
+				sdlEvents <- e
 			}
 		}
 

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"runtime"
+
 	"uk.ac.bris.cs/gameoflife/gol"
 	"uk.ac.bris.cs/gameoflife/sdl"
 )
@@ -37,6 +38,11 @@ func main() {
 		10000000000,
 		"Specify the number of turns to process. Defaults to 10000000000.")
 
+	noVis := flag.Bool(
+		"noVis",
+		false,
+		"Disables the SDL window, so there is no visualisation during the tests.")
+
 	flag.Parse()
 
 	fmt.Println("Threads:", params.Threads)
@@ -47,5 +53,16 @@ func main() {
 	events := make(chan gol.Event, 1000)
 
 	go gol.Run(params, events, keyPresses)
-	sdl.Run(params, events, keyPresses)
+	if !(*noVis) {
+		sdl.Run(params, events, keyPresses)
+	} else {
+		complete := false
+		for !complete {
+			event := <-events
+			switch event.(type) {
+			case gol.FinalTurnComplete:
+				complete = true
+			}
+		}
+	}
 }
