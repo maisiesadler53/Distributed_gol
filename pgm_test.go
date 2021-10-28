@@ -26,7 +26,7 @@ func TestPgm(t *testing.T) {
 				testName := fmt.Sprintf("%dx%dx%d-%d", p.ImageWidth, p.ImageHeight, p.Turns, p.Threads)
 				t.Run(testName, func(t *testing.T) {
 					events := make(chan gol.Event)
-					gol.Run(p, events, nil)
+					go gol.Run(p, events, nil)
 					for range events {
 					}
 					cellsFromImage := readAliveCells(

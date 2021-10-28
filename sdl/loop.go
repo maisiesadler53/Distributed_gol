@@ -6,7 +6,7 @@ import (
 	"uk.ac.bris.cs/gameoflife/gol"
 )
 
-func Start(p gol.Params, events <-chan gol.Event, keyPresses chan<- rune) {
+func Run(p gol.Params, events <-chan gol.Event, keyPresses chan<- rune) {
 	w := NewWindow(int32(p.ImageWidth), int32(p.ImageHeight))
 
 sdlLoop:
@@ -38,6 +38,9 @@ sdlLoop:
 				w.FlipPixel(e.Cell.X, e.Cell.Y)
 			case gol.TurnComplete:
 				w.RenderFrame()
+			case gol.FinalTurnComplete:
+				w.Destroy()
+				break sdlLoop
 			default:
 				if len(event.String()) > 0 {
 					fmt.Printf("Completed Turns %-8v%v\n", event.GetCompletedTurns(), event)
