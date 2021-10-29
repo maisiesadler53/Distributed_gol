@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ var sdlEvents chan gol.Event
 var sdlAlive chan int
 
 func TestMain(m *testing.M) {
+	runtime.LockOSThread()
 	noVis := flag.Bool("noVis", false,
 		"Disables the SDL window, so there is no visualisation during the tests.")
 	flag.Parse()
