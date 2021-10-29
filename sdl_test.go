@@ -32,23 +32,45 @@ func TestMain(m *testing.M) {
 		w = sdl.NewWindow(int32(p.ImageWidth), int32(p.ImageHeight))
 	}
 
+	board := make([][]byte, p.ImageHeight)
+	for i := 0; i < p.ImageHeight; i++ {
+		board[i] = make([]byte, p.ImageWidth)
+	}
+
 sdlLoop:
 	for {
 		w.PollEvent()
 		select {
 		case event, ok := <-sdlEvents:
 			if !ok {
-				w.Destroy()
+				if w != nil {
+					w.Destroy()
+				}
 				break sdlLoop
 			}
 			switch e := event.(type) {
 			case gol.CellFlipped:
-				w.FlipPixel(e.Cell.X, e.Cell.Y)
+				board[e.Cell.Y][e.Cell.X] = ^board[e.Cell.Y][e.Cell.X]
+				if w != nil {
+					w.FlipPixel(e.Cell.X, e.Cell.Y)
+				}
 			case gol.TurnComplete:
-				w.RenderFrame()
-				sdlAlive <- w.CountPixels()
+				if w != nil {
+					w.RenderFrame()
+				}
+				count := 0
+				for y := 0; y < p.ImageHeight; y++ {
+					for x := 0; x < p.ImageWidth; x++ {
+						if board[y][x] == 255 {
+							count++
+						}
+					}
+				}
+				sdlAlive <- count
 			case gol.FinalTurnComplete:
-				w.Destroy()
+				if w != nil {
+					w.Destroy()
+				}
 				break sdlLoop
 			default:
 				if len(event.String()) > 0 {
