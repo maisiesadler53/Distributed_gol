@@ -25,7 +25,11 @@ func TestMain(m *testing.M) {
 	sdlAlive = make(chan int)
 	result := make(chan int)
 	go func() {
-		result <- m.Run()
+		res := m.Run()
+		go func() {
+			sdlEvents <- gol.FinalTurnComplete{}
+		}()
+		result <- res
 	}()
 	// sdl.Run(p, sdlEvents, nil)
 	var w *sdl.Window = nil
