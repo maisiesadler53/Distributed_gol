@@ -152,7 +152,7 @@ Test your implementation using `go test -v -run=TestGol/-1$` *on the controller*
 
 ![Step 2](content/cw_diagrams-Distributed_2.png)
 
-You should report the number of cells that are still alive *every 2 seconds* to the local controller. The controller should then send an `AliveCellsCount` event to the `events` channel. 
+You should report the number of cells that are still alive *every 2 seconds* to the local controller. The controller should then send an `AliveCellsCount` event to the `events` channel. It also needs to send `TurnComplete` events whenever it finishes a turn, so that the test can check the turn number. 
 
 Test your implementation using `go test -v -run=TestAlive` *on the controller*.
 
