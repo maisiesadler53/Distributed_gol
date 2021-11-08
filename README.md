@@ -2,6 +2,7 @@
 
 **[Video Walkthrough of Parallel Component (skip to 04:20 to skip IntelliJ install and project opening steps)](https://web.microsoftstream.com/video/990e039f-4bc1-4b22-b0b1-ae895ee07163)** Please note that the rest of assignment will be introduced after reading week
 
+**[Video Walkthrough of Distributed Component](https://web.microsoftstream.com/video/604c97e7-d0a6-4fb0-8a3b-52948a740983)** Please note that the report specification will be run through next week
 <!-- **[Coursework Q&A Recording](https://web.microsoftstream.com/video/ab833321-3a78-4c83-b87e-16ce1b5c244f)** -->
 
 This is the Computer Systems A summative coursework. The coursework is worth 80% of the unit mark. It is to be completed in your programming pairs. You must report any change to your pairing to the unit director *before* starting your assignment. It runs over 4 weeks (5 weeks including the reading week) and the deadline for submitting all your work is **Friday 3rd December 13:00**.
