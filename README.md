@@ -197,6 +197,8 @@ Make sure to keep the communication between nodes as efficient as possible. For 
 
 Reducing coupling between the "Local Controller" and the "GOL workers" is desirable. To initiate communication, the "Local Controller" connects to the broker machine via RPC. This allows the "Local Controller" to start the game by calling the main "Broker" method, which returns the final game state once it is finished. Likewise, the "Broker" connects to the "GOL workers". It is then able to give them slices of the game world and ask them to return the result of iterating on it.
 
+**Note that it is fine to have the Broker and Local Controller running on the same machine to get around firewall / port forwarding issues**
+
 #### Largest Image
 
 *We created a [5120x5120 pgm file](https://uob-my.sharepoint.com/:u:/g/personal/kg17815_bristol_ac_uk/EUWlZMH2MetHuNF8Ua3nb7EBx-LJqqU6OeFAW0SuHvr0pw?e=hWK1W0) if you wish to test or benchmark your solution with a very large image.*
