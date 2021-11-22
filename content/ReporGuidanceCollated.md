@@ -41,4 +41,4 @@ Note that if you only attempt the parallel component of the assignment, you will
 ## Previous Student Examples
 
 - [Here is a partially complete report from last year](https://www.ole.bris.ac.uk/bbcswebdav/courses/COMS20008_2021_TB-1/CONTENT_2021/OTHER/g.pdf) that scored highly
-- [Here is an outstanding report from 2018.](https://www.ole.bris.ac.uk/bbcswebdav/courses/COMS20008_2021_TB-1/CONTENT_2021/OTHER/g.pdf) Note that the unit was quite different then and had no distributed component, so the content is not completely relevant to this year. This report was done in Latex using a conference paper template. 
+- [Here is an outstanding report from 2018.](https://www.ole.bris.ac.uk/bbcswebdav/courses/COMS20008_2021_TB-1/CONTENT_2021/OTHER/e.pdf) Note that the unit was quite different then and had no distributed component, so the content is not completely relevant to this year. This report was done in Latex using a conference paper template. 
