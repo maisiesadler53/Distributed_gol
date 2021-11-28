@@ -46,9 +46,10 @@ The skeleton code uses SDL. This is a basic graphics library which you already u
 
 The coursework requires two independent implementations. You will be required to submit **both** implementations (assuming both were attempted). Every student is required to upload their full work to Blackboard. There will be three separate submissions points on Blackboard - one for the report and two for each implementation.
 
-- For the report, you must submit a single file called `report.pdf`.
-- For the parallel implementation, you must submit a single zip file called `parallel.zip`. It must contain all the code required to compile and run the program.
-- For the distributed implementation, you must submit a single zip file called `distributed.zip`. It must contain all the code required to compile and run the program.
+- For the report, you must submit a single file called `report.pdf`. [report submission point](https://www.ole.bris.ac.uk/webapps/assignment/uploadAssignment?content_id=_6181182_1&course_id=_247718_1&group_id=&mode=view)
+- For the parallel implementation, you must submit a single zip file called `parallel.zip`. It must contain all the code required to compile and run the program. [parallel submission point](https://www.ole.bris.ac.uk/webapps/assignment/uploadAssignment?content_id=_6278508_1&course_id=_247718_1&group_id=&mode=view)
+- For the distributed implementation, you must submit a single zip file called `distributed.zip`. It must contain all the code required to compile and run the program. [distributed submission point](https://www.ole.bris.ac.uk/webapps/assignment/uploadAssignment?content_id=_6278511_1&course_id=_247718_1&group_id=&mode=view)
+- If you have multiple versions, only submit the ones you wish us to check for correctness (one zip for parallel and one for distributed). Other versions may be shared via OneDrive with Sion and Matt.
 
 Submitting different filenames or file formats (e.g. `.docx`, `.tex`, `.7z` or `.rar`) will result in a mark penalty.
 
