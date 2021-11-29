@@ -42,3 +42,42 @@ Note that if you only attempt the parallel component of the assignment, you will
 
 - [Here is a partially complete report from last year](https://www.ole.bris.ac.uk/bbcswebdav/courses/COMS20008_2021_TB-1/CONTENT_2021/OTHER/g.pdf) that scored highly
 - [Here is an outstanding report from 2018.](https://www.ole.bris.ac.uk/bbcswebdav/courses/COMS20008_2021_TB-1/CONTENT_2021/OTHER/e.pdf) Note that the unit was quite different then and had no distributed component, so the content is not completely relevant to this year. This report was done in Latex using a conference paper template. 
+
+## Example Benchmark Function
+
+Name it something like my_benchmark_test.go
+
+```
+package main
+
+import (
+	"fmt"
+	"os"
+	"testing"
+	"uk.ac.bris.cs/gameoflife/gol"
+)
+
+const benchLength = 1000
+
+func BenchmarkGol(b *testing.B) {
+	for threads := 1; threads <= 16; threads++ {
+		os.Stdout = nil // Disable all program output apart from benchmark results
+		p := gol.Params{
+			Turns:       benchLength,
+			Threads:     threads,
+			ImageWidth:  512,
+			ImageHeight: 512,
+		}
+		name := fmt.Sprintf("%dx%dx%d-%d", p.ImageWidth, p.ImageHeight, p.Turns, p.Threads)
+		b.Run(name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {		
+				events := make(chan gol.Event)
+				go gol.Run(p, events, nil)
+				for range events {
+
+				}
+			}
+		})
+	}
+}
+```
