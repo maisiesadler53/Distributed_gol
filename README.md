@@ -2,13 +2,14 @@
 
 **[Video Walkthrough of Parallel Component (skip to 04:20 to skip IntelliJ install and project opening steps)](https://web.microsoftstream.com/video/990e039f-4bc1-4b22-b0b1-ae895ee07163)** Please note that the rest of assignment will be introduced after reading week
 
-**[Video Walkthrough of Distributed Component](https://web.microsoftstream.com/video/604c97e7-d0a6-4fb0-8a3b-52948a740983)** 
+<!-- # Please note if you are viewing source, this video is out of date (for 22-23) and will be updated during reading week
+# **[Video Walkthrough of Distributed Component](https://web.microsoftstream.com/video/604c97e7-d0a6-4fb0-8a3b-52948a740983)** -->
 <!-- **[Coursework Q&A Recording](https://web.microsoftstream.com/video/ab833321-3a78-4c83-b87e-16ce1b5c244f)** -->
 
-**[Video Walkthrough of Report Component](https://web.microsoftstream.com/video/b5e8cf95-981c-4c26-8522-cc0210293d51)** Also see this document which accompanies the video: **[All report guidance with links collated into single document](https://github.com/UoB-CSA/gol-skeleton/blob/master/content/ReporGuidanceCollated.md)**
+<!--**[Video Walkthrough of Report Component](https://web.microsoftstream.com/video/b5e8cf95-981c-4c26-8522-cc0210293d51)** Also see this document which accompanies the video: **[All report guidance with links collated into single document](https://github.com/UoB-CSA/gol-skeleton/blob/master/content/ReporGuidanceCollated.md)**-->
 
 
-This is the Computer Systems A summative coursework. The coursework is worth 80% of the unit mark. It is to be completed in your programming pairs. You must report any change to your pairing to the unit director *before* starting your assignment. It runs over 4 weeks (5 weeks including the reading week) and the deadline for submitting all your work is **Friday 3rd December 13:00**.
+This is the Computer Systems A summative coursework. The coursework is worth 80% of the unit mark. It is to be completed in your programming pairs. You must report any change to your pairing to the unit director *before* starting your assignment. It runs over 4 weeks (5 weeks including the reading week) and the deadline for submitting all your work is **Thursday 1st December 13:00**.
 
 Talk to each other regularly and make sure you manage your team well. Let us know about issues before they grow to affect your team’s performance. It is important to carefully manage your time for this assignment. Do not spend hours trying to debug on your own; use pair programming, seek help from our teaching assistants during scheduled labs and ask questions on Teams.
 
@@ -46,9 +47,9 @@ The skeleton code uses SDL. This is a basic graphics library which you already u
 
 The coursework requires two independent implementations. You will be required to submit **both** implementations (assuming both were attempted). Every student is required to upload their full work to Blackboard. There will be three separate submissions points on Blackboard - one for the report and two for each implementation.
 
-- For the report, you must submit a single file called `report.pdf`. [report submission point](https://www.ole.bris.ac.uk/webapps/assignment/uploadAssignment?content_id=_6181182_1&course_id=_247718_1&group_id=&mode=view)
-- For the parallel implementation, you must submit a single zip file called `parallel.zip`. It must contain all the code required to compile and run the program. [parallel submission point](https://www.ole.bris.ac.uk/webapps/assignment/uploadAssignment?content_id=_6278508_1&course_id=_247718_1&group_id=&mode=view)
-- For the distributed implementation, you must submit a single zip file called `distributed.zip`. It must contain all the code required to compile and run the program. [distributed submission point](https://www.ole.bris.ac.uk/webapps/assignment/uploadAssignment?content_id=_6278511_1&course_id=_247718_1&group_id=&mode=view)
+- For the report, you must submit a single file called `report.pdf`. [report submission point - NOT YET AVAILABLE](#)
+- For the parallel implementation, you must submit a single zip file called `parallel.zip`. It must contain all the code required to compile and run the program. [parallel submission point - NOT YET AVAILABLE](#)
+- For the distributed implementation, you must submit a single zip file called `distributed.zip`. It must contain all the code required to compile and run the program. [distributed submission point - NOT YET AVAILABLE](#)
 - If you have multiple versions, only submit the ones you wish us to check for correctness (one zip for parallel and one for distributed). Other versions may be shared via OneDrive with Sion and Matt.
 
 Submitting different filenames or file formats (e.g. `.docx`, `.tex`, `.7z` or `.rar`) will result in a mark penalty.
@@ -205,7 +206,7 @@ Reducing coupling between the "Local Controller" and the "GOL workers" is desira
 
 #### Largest Image
 
-*We created a [5120x5120 pgm file](https://uob-my.sharepoint.com/:u:/g/personal/kg17815_bristol_ac_uk/EUWlZMH2MetHuNF8Ua3nb7EBx-LJqqU6OeFAW0SuHvr0pw?e=hWK1W0) if you wish to test or benchmark your solution with a very large image.*
+*We created a [5120x5120 pgm file](http://seis.bristol.ac.uk/~sh1670/5120x5120.pgm) if you wish to test or benchmark your solution with a very large image.*
 
 ### Success Criteria
 
