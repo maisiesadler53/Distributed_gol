@@ -1,6 +1,7 @@
 # CSA Coursework: Game of Life
 
 **[Video Walkthrough of Parallel Component (skip to 04:20 to skip IntelliJ install and project opening steps)](https://web.microsoftstream.com/video/990e039f-4bc1-4b22-b0b1-ae895ee07163)** Please note that the rest of assignment will be introduced after reading week
+
 **[Alternative perspective on interfaces in Go done by George](https://web.microsoftstream.com/video/32fe3a70-5ec2-422d-b138-68d02ead1938)
 
 <!-- # Please note if you are viewing source, this video is out of date (for 22-23) and will be updated during reading week
