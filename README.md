@@ -2,7 +2,7 @@
 
 **[Video Walkthrough of Parallel Component (skip to 04:20 to skip IntelliJ install and project opening steps)](https://web.microsoftstream.com/video/990e039f-4bc1-4b22-b0b1-ae895ee07163)** Please note that the rest of assignment will be introduced after reading week
 
-**[Alternative perspective on interfaces in Go done by George](https://web.microsoftstream.com/video/32fe3a70-5ec2-422d-b138-68d02ead1938)**
+**[Alternative perspective on interfaces in Go done by George](https://web.microsoftstream.com/video/30a6b464-aa7a-4e56-abf8-3534275440e3)**
 
 <!-- # Please note if you are viewing source, this video is out of date (for 22-23) and will be updated during reading week
 # **[Video Walkthrough of Distributed Component](https://web.microsoftstream.com/video/604c97e7-d0a6-4fb0-8a3b-52948a740983)** -->
