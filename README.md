@@ -144,6 +144,18 @@ suggested steps for approaching the problem, but you are *not* required to
 follow this sequence, and can jump straight to implementing the more advanced
 versions of the system if you feel confident about it.
 
+
+**IMPORTANT: You need to modify [the count_test](https://github.com/UoB-CSA/gol-skeleton/blob/master/count_test.go) when testing your distributed implementation by replacing lines 41-53 with:**
+
+```
+for event := range events {
+    switch e := event.(type) {
+    case gol.AliveCellsCount:
+        var expected int
+```
+
+There is a modified version of the test file available [here](https://seis.bristol.ac.uk/~sh1670/dist_count_test.go)
+
 ### Step 1
 
 ![Step 1](content/cw_diagrams-Distributed_1.png)
@@ -155,6 +167,7 @@ Separate your implementation into two components. One component, the local contr
 Start by implementing a basic controller which can tell the logic engine to evolve Game of Life for the number of turns specified in `gol.Params.Turns`. You can achieve this by implementing a single, blocking RPC call to process all requested turns.
 
 Test your implementation using `go test -v -run=TestGol/-1$` *on the controller*.
+
 
 ### Step 2
 
