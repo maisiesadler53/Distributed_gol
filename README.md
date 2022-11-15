@@ -92,7 +92,7 @@ Test your code using `go test -v -run=TestGol`. You can use tracing to verify th
 
 ![Step 3](content/cw_diagrams-Parallel_3.png)
 
-The lab sheets included the use of a timer. Now using a ticker, report the number of cells that are still alive *every 2 seconds*. To report the count use the `AliveCellsCount` event.
+The lab sheets included the use of a timer. Now using a ticker, report the number of cells that are still alive *every 2 seconds*. To report the count use the `AliveCellsCount` event. Also send the `TurnComplete` event after each complete iteration.
 
 Test your code using `go test -v -run=TestAlive`.
 
