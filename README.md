@@ -198,7 +198,7 @@ Finally, the local controller should be able to manage the behaviour of the GoL 
 
 Test the control rules by running `go run .`.
 
-### Step 5
+### Step 5 - New for 22 - go straight to Step 6
 
 ![Step 5](content/cw_diagrams-Distributed_5.png)
 
