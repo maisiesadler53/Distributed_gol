@@ -173,7 +173,7 @@ Test your implementation using `go test -v -run=TestGol/-1$` *on the controller*
 
 ![Step 2](content/cw_diagrams-Distributed_2.png)
 
-You should report the number of cells that are still alive *every 2 seconds* to the local controller. The controller should then send an `AliveCellsCount` event to the `events` channel.  
+You should report the number of cells that are still alive *every 2 seconds* to the local controller (it is anticipated that you will run a ticker on the local controller and make an RPC call to the AWS node / worker / broker every 2 seconds). The controller should then send an `AliveCellsCount` event to the `events` channel.  
 
 Test your implementation using `go test -v -run=TestAlive` *on the controller*.
 
