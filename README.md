@@ -136,6 +136,7 @@ Test the visualisation and control rules by running `go run .`
 - Analyse how your implementation scales as more workers are added.
 - Briefly discuss your methodology for acquiring any results or measurements.
 
+<!---
 ## Stage 2 - Distributed Implementation
 
 In this stage, you are required to create an implementation that uses a number of
@@ -144,7 +145,7 @@ and communicate state between machines over a network.  Below is a series of
 suggested steps for approaching the problem, but you are *not* required to
 follow this sequence, and can jump straight to implementing the more advanced
 versions of the system if you feel confident about it.
-
+-->
 <!---
 **IMPORTANT: You need to modify [the count_test](https://github.com/UoB-CSA/gol-skeleton/blob/master/count_test.go) when testing your distributed implementation by replacing lines 41-53 with:**
 
@@ -157,6 +158,7 @@ for event := range events {
 
 There is a modified version of the test file available [here](https://seis.bristol.ac.uk/~sh1670/dist_count_test.go)
 -->
+<!---
 ### Step 1
 
 ![Step 1](content/cw_diagrams-Distributed_1.png)
@@ -326,3 +328,4 @@ You will be required to demonstrate your implementations in a viva. This will in
 
 As part of the viva, we will also discuss your report. You should be prepared to discuss and expand on any points mentioned in your report.
 
+-->
