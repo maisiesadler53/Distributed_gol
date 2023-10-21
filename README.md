@@ -8,10 +8,9 @@
 **[Video Walkthrough of Distributed Component](https://web.microsoftstream.com/video/b4f92750-6f76-4f51-8d37-93413c3cb088)** 
 -->
 <!-- **[Coursework Q&A Recording](https://web.microsoftstream.com/video/ab833321-3a78-4c83-b87e-16ce1b5c244f)** -->
-<!---
-**[Video Walkthrough of Report Component](https://web.microsoftstream.com/video/b5e8cf95-981c-4c26-8522-cc0210293d51)** Also see this document which accompanies the video: **[All report guidance with links collated into single document](https://github.com/UoB-CSA/gol-skeleton/blob/master/content/ReporGuidanceCollated.md)**
 
--->
+<!---
+**[Video Walkthrough of Report Component](https://web.microsoftstream.com/video/b5e8cf95-981c-4c26-8522-cc0210293d51)** Also see this document which accompanies the video: **[All report guidance with links collated into single document](https://github.com/UoB-CSA/gol-skeleton/blob/master/content/ReporGuidanceCollated.md)**-->
 
 This is the Computer Systems A summative coursework. The coursework is worth 80% of the unit mark. It is to be completed in your programming pairs. You must report any change to your pairing to the unit director *before* starting your assignment. It runs over 4 weeks (5 weeks including the reading week) and the deadline for submitting all your work is **Thursday 1st December 13:00**.
 
