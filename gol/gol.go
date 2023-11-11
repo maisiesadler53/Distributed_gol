@@ -12,6 +12,9 @@ type Params struct {
 func Run(p Params, events chan<- Event, keyPresses <-chan rune) {
 
 	//	TODO: Put the missing channels in here.
+	ioFilename := make(chan string)
+	ioOutput := make(chan uint8, 10000) // It doesnt have to be buffered btw
+	ioInput := make(chan uint8, 10000)
 
 	ioCommand := make(chan ioCommand)
 	ioIdle := make(chan bool)
@@ -19,9 +22,9 @@ func Run(p Params, events chan<- Event, keyPresses <-chan rune) {
 	ioChannels := ioChannels{
 		command:  ioCommand,
 		idle:     ioIdle,
-		filename: nil,
-		output:   nil,
-		input:    nil,
+		filename: ioFilename,
+		output:   ioOutput,
+		input:    ioInput,
 	}
 	go startIo(p, ioChannels)
 
@@ -29,9 +32,9 @@ func Run(p Params, events chan<- Event, keyPresses <-chan rune) {
 		events:     events,
 		ioCommand:  ioCommand,
 		ioIdle:     ioIdle,
-		ioFilename: nil,
-		ioOutput:   nil,
-		ioInput:    nil,
+		ioFilename: ioFilename,
+		ioOutput:   ioOutput,
+		ioInput:    ioInput,
 	}
-	distributor(p, distributorChannels)
+	distributor(p, distributorChannels, keyPresses)
 }
