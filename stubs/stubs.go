@@ -1,10 +1,11 @@
 package stubs
 
 var GenerateGameOfLife = "GameOfLifeWorker.GenerateGameOfLife"
-var AliveCellCount = "GameOfLifeWorker.AliveCellCount"
+var AliveCellCount = "GameOfLifeWorker.AliveCellCountTick"
 
 type Response struct {
 	WorldPart [][]byte
+	Turn      int
 }
 type Params struct {
 	Turns       int

@@ -7,18 +7,25 @@ import (
 	"net"
 	"net/rpc"
 	"time"
+
 	"uk.ac.bris.cs/gameoflife/stubs"
 )
 
 type GameOfLifeWorker struct {
-	ticker chan bool
-	world  chan [][]byte
+	tick  chan bool
+	world chan [][]byte
+	turn  chan int
+	// done  bool
 }
 
 func (s *GameOfLifeWorker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err error) {
 	// res.WorldPart = s.world
-	s.ticker <- true
+	s.tick <- true
+	// if s.done {
+	// 	return
+	// }
 	res.WorldPart = <-s.world
+	res.Turn = <-s.turn
 	return
 }
 
@@ -41,11 +48,12 @@ func (s *GameOfLifeWorker) GenerateGameOfLife(req stubs.Request, res *stubs.Resp
 	for i := range nextWorld {
 		nextWorld[i] = make([]byte, height)
 	}
-
-	for turn := 0; turn < p.Turns; turn++ {
+	turn := 0
+	for turn = 0; turn < p.Turns; turn++ {
 		select {
-		case <-s.ticker:
+		case <-s.tick:
 			s.world <- world
+			s.turn <- turn
 		default: // If not, it continues
 		}
 		for i := startX; i < endX; i++ {
@@ -78,6 +86,8 @@ func (s *GameOfLifeWorker) GenerateGameOfLife(req stubs.Request, res *stubs.Resp
 
 	}
 	res.WorldPart = world
+	res.Turn = turn
+	// s.done = true
 	return
 }
 
@@ -86,9 +96,11 @@ func main() {
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 	world := make(chan [][]byte)
-	ticker := make(chan bool)
+	tick := make(chan bool)
+	turn := make(chan int)
+	// done := false
 
-	err := rpc.Register(&GameOfLifeWorker{ticker, world})
+	err := rpc.Register(&GameOfLifeWorker{tick, world, turn})
 	if err != nil {
 		fmt.Println("Error registering listener", err)
 		return

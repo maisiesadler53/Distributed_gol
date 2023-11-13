@@ -5,6 +5,7 @@ import (
 	"net/rpc"
 	"strconv"
 	"time"
+
 	"uk.ac.bris.cs/gameoflife/stubs"
 	"uk.ac.bris.cs/gameoflife/util"
 )
@@ -18,7 +19,7 @@ type distributorChannels struct {
 	ioInput    <-chan uint8
 }
 
-func makeCall(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int) [][]byte {
+func makeCall(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, done chan bool, worldChan chan [][]byte, turn chan int) {
 	request := stubs.Request{
 		World:  world,
 		Params: params,
@@ -31,7 +32,10 @@ func makeCall(client *rpc.Client, world [][]byte, params stubs.Params, startX in
 	client.Call(stubs.GenerateGameOfLife, request, response)
 
 	newWorld := response.WorldPart
-	return newWorld
+	turn <- response.Turn
+	done <- true
+	worldChan <- newWorld
+
 }
 
 func calculateAliveCells(p Params, world [][]byte) []util.Cell {
@@ -94,8 +98,12 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	//	worldParts[i] = make(chan [][]byte) // Channels for parallel calculation
 	//}
 	ticker := time.NewTicker(2 * time.Second) // This is for step 3
+	done := make(chan bool, 1)
+	worldChan := make(chan [][]byte, 1)
+	turnChan := make(chan int, 1)
 
-	nextWorld = makeCall(client, world, stubs.Params{p.Turns, p.Threads, p.ImageHeight, p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight)
+	go makeCall(client, world, stubs.Params{p.Turns, p.Threads, p.ImageHeight, p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight, done, worldChan, turnChan)
+thisLoop:
 	for {
 		select {
 		case <-ticker.C:
@@ -103,18 +111,23 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 			response := new(stubs.Response)
 			client.Call(stubs.AliveCellCount, request, response)
 			newWorld := response.WorldPart
-			c.events <- AliveCellsCount{turn, len(calculateAliveCells(p, newWorld))}
+			c.events <- AliveCellsCount{response.Turn, len(calculateAliveCells(p, newWorld))}
+		case <-done:
+			break thisLoop
 		default: // If not, it continues
 		}
-
 	}
+	fmt.Println("here")
+	nextWorld = <-worldChan
+	fmt.Println("There")
+	turn = <-turnChan
 	//for i := 0; i < p.Threads; i++ {
 	//	part := <-worldParts[i]
 	//	nextWorld = append(nextWorld, part...)
 	//}
 	world = append([][]byte{}, nextWorld...)
 	nextWorld = [][]byte{}
-
+	fmt.Println("There")
 	// c.events <- TurnComplete{turn}
 	//select {
 	//case key := <-keyPresses:
@@ -157,14 +170,14 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	// TODO: Report the final state using FinalTurnCompleteEvent.
 	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
 
-	//c.ioCommand <- 0
-	//filename = filename + "x" + strconv.Itoa(turn)
-	//c.ioFilename <- filename
-	//for i, row := range world {
-	//	for j := range row {
-	//		c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
-	//	}
-	//}
+	c.ioCommand <- 0
+	filename = filename + "x" + strconv.Itoa(turn)
+	c.ioFilename <- filename
+	for i, row := range world {
+		for j := range row {
+			c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
+		}
+	}
 	// Make sure that the Io has finished any output before exiting.
 	c.ioCommand <- ioCheckIdle
 	<-c.ioIdle
