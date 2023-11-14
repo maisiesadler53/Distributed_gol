@@ -30,10 +30,10 @@ func makeCall(client *rpc.Client, world [][]byte, params stubs.Params, startX in
 	}
 	response := new(stubs.Response)
 	client.Call(stubs.GenerateGameOfLife, request, response)
-
+	done <- true
 	newWorld := response.WorldPart
 	turn <- response.Turn
-	done <- true
+
 	worldChan <- newWorld
 
 }
@@ -103,20 +103,22 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	turnChan := make(chan int, 1)
 
 	go makeCall(client, world, stubs.Params{p.Turns, p.Threads, p.ImageHeight, p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight, done, worldChan, turnChan)
-thisLoop:
-	for {
-		select {
-		case <-ticker.C:
-			request := stubs.Request{}
-			response := new(stubs.Response)
-			client.Call(stubs.AliveCellCount, request, response)
-			newWorld := response.WorldPart
-			c.events <- AliveCellsCount{response.Turn, len(calculateAliveCells(p, newWorld))}
-		case <-done:
-			break thisLoop
-		default: // If not, it continues
+	go func() {
+	thisLoop:
+		for {
+			select {
+			case <-ticker.C:
+				request := stubs.Request{}
+				response := new(stubs.Response)
+				client.Call(stubs.AliveCellCount, request, response)
+				newWorld := response.WorldPart
+				c.events <- AliveCellsCount{response.Turn, len(calculateAliveCells(p, newWorld))}
+			case <-done:
+				break thisLoop
+			default: // If not, it continues
+			}
 		}
-	}
+	}()
 	fmt.Println("here")
 	nextWorld = <-worldChan
 	fmt.Println("There")
