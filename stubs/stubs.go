@@ -2,6 +2,7 @@ package stubs
 
 var GenerateGameOfLife = "GameOfLifeWorker.GenerateGameOfLife"
 var AliveCellCount = "GameOfLifeWorker.AliveCellCountTick"
+var Control = "GameOfLifeWorker.Control"
 
 type Response struct {
 	WorldPart [][]byte

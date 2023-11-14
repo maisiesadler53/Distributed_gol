@@ -108,17 +108,56 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 		for {
 			select {
 			case <-ticker.C:
+				fmt.Println("Ticker called")
 				request := stubs.Request{}
 				response := new(stubs.Response)
 				client.Call(stubs.AliveCellCount, request, response)
 				newWorld := response.WorldPart
 				c.events <- AliveCellsCount{response.Turn, len(calculateAliveCells(p, newWorld))}
+			case key := <-keyPresses:
+				if key == 's' {
+					request := stubs.Request{Ctrl: key}
+					response := new(stubs.Response)
+					client.Call(stubs.Control, request, response)
+					c.ioCommand <- 0
+					filename = filename + "x" + strconv.Itoa(response.Turn)
+					c.ioFilename <- filename
+					for i, row := range world {
+						for j := range row {
+							c.ioOutput <- response.WorldPart[i][j]
+						}
+					}
+					c.events <- ImageOutputComplete{response.Turn, filename}
+				} else if key == 'q' {
+					request := stubs.Request{Ctrl: key}
+					response := new(stubs.Response)
+					client.Call(stubs.Control, request, response)
+					ticker.Stop()
+					break thisLoop
+				} else if key == 'p' {
+					request := stubs.Request{Ctrl: key}
+					response := new(stubs.Response)
+					client.Call(stubs.Control, request, response)
+					c.events <- StateChange{response.Turn, Paused}
+					for {
+						keyAgain := <-keyPresses
+						if keyAgain == 'p' {
+							request := stubs.Request{Ctrl: key}
+							response := new(stubs.Response)
+							client.Call(stubs.Control, request, response)
+
+							c.events <- StateChange{response.Turn, Executing}
+							break
+						}
+					}
+				}
 			case <-done:
 				break thisLoop
 			default: // If not, it continues
 			}
 		}
 	}()
+
 	fmt.Println("here")
 	nextWorld = <-worldChan
 	fmt.Println("There")
@@ -130,44 +169,6 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	world = append([][]byte{}, nextWorld...)
 	nextWorld = [][]byte{}
 	fmt.Println("There")
-	// c.events <- TurnComplete{turn}
-	// select {
-	// case key := <-keyPresses:
-	// 	if key == 's' {
-	// 		c.ioCommand <- 0
-	// 		filename = filename + "x" + strconv.Itoa(turn)
-	// 		c.ioFilename <- filename
-	// 		for i, row := range world {
-	// 			for j := range row {
-	// 				c.ioOutput <- world[i][j]
-	// 			}
-	// 		}
-	// 		c.events <- ImageOutputComplete{turn, filename}
-	// 	} else if key == 'q' {
-	// 		c.ioCommand <- 0
-	// 		filename = filename + "x" + strconv.Itoa(turn)
-	// 		c.ioFilename <- filename
-	// 		for i, row := range world {
-	// 			for j := range row {
-	// 				c.ioOutput <- world[i][j]
-	// 			}
-	// 		}
-
-	// 		c.events <- ImageOutputComplete{turn, filename}
-	// 		break executeLoop
-	// 	} else if key == 'p' {
-	// 		c.events <- StateChange{turn, Paused}
-
-	// 		for {
-	// 			keyAgain := <-keyPresses
-	// 			if keyAgain == 'p' {
-	// 				c.events <- StateChange{turn, Executing}
-	// 				break
-	// 			}
-	// 		}
-	// 	}
-	// default:
-	// }
 
 	// TODO: Report the final state using FinalTurnCompleteEvent.
 	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
@@ -185,8 +186,9 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	<-c.ioIdle
 
 	c.events <- StateChange{turn, Quitting}
-	// ticker.Stop()
+	ticker.Stop()
 
 	// Close the channel to stop the SDL goroutine gracefully. Removing may cause deadlock.
 	close(c.events)
+
 }

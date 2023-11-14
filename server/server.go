@@ -16,22 +16,40 @@ type GameOfLifeWorker struct {
 	world chan [][]byte
 	turn  chan int
 	ctrl  chan rune
+	done  chan bool
 	// done  bool // I am making this in case AliveCellsCountTick or Control sends smth through but after it gets stuck
 }
 
 func (s *GameOfLifeWorker) Control(req stubs.Request, res *stubs.Response) (err error) {
+	fmt.Println("function called")
 	s.ctrl <- req.Ctrl
+	res.WorldPart = <-s.world
+	res.Turn = <-s.turn
 	return
 }
 
 func (s *GameOfLifeWorker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err error) {
 	// res.WorldPart = s.world
+	fmt.Println("alive function called")
 	s.tick <- true
 	// if s.done {
 	// 	return
 	// }
-	res.WorldPart = <-s.world
-	res.Turn = <-s.turn
+loop:
+	for {
+		select {
+		case <-s.done:
+			return
+		// case worldPart := <-s.world:
+		// 	res.WorldPart = worldPart
+		default:
+			res.WorldPart = <-s.world
+			res.Turn = <-s.turn
+			break loop
+		}
+	}
+
+	fmt.Println(" alive function finished")
 	return
 }
 
@@ -55,19 +73,39 @@ func (s *GameOfLifeWorker) GenerateGameOfLife(req stubs.Request, res *stubs.Resp
 		nextWorld[i] = make([]byte, height)
 	}
 	turn := 0
+turnLoop:
 	for turn = 0; turn < p.Turns; turn++ {
+		// fmt.Println("Keeps running")
 		select {
 		case <-s.tick:
+			fmt.Println("inside for tick")
 			s.world <- world
 			s.turn <- turn
+			fmt.Println("sent world")
 		case ctrl := <-s.ctrl:
 			if ctrl == 's' {
 				s.world <- world
+				s.turn <- turn
 			} else if ctrl == 'q' {
-
+				s.world <- world
+				s.turn <- turn
+				s.done <- true
+				fmt.Println("sent done")
+				break turnLoop
 			} else if ctrl == 'p' {
-
+				s.world <- world
+				s.turn <- turn
+			thisloop:
+				for {
+					keyAgain := <-s.ctrl
+					if keyAgain == 'p' {
+						s.world <- world
+						s.turn <- turn
+						break thisloop
+					}
+				}
 			}
+
 		default: // If not, it continues
 		}
 		for i := startX; i < endX; i++ {
@@ -99,6 +137,7 @@ func (s *GameOfLifeWorker) GenerateGameOfLife(req stubs.Request, res *stubs.Resp
 		}
 
 	}
+	fmt.Println("bottom of generate thing")
 	res.WorldPart = world
 	res.Turn = turn
 	// s.done = true
@@ -111,22 +150,31 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	world := make(chan [][]byte)
 	tick := make(chan bool)
-	turn := make(chan int)
+	turn := make(chan int, 1)
 	ctrl := make(chan rune)
+	done := make(chan bool)
 	// done := false
 
-	err := rpc.Register(&GameOfLifeWorker{tick, world, turn, ctrl})
+	err := rpc.Register(&GameOfLifeWorker{tick, world, turn, ctrl, done})
+	// There is a problem where if we run distributor twice channels are not free the second time because there is something in it
 	if err != nil {
 		fmt.Println("Error registering listener", err)
 		return
 	}
+	fmt.Println("HERE")
 	listener, _ := net.Listen("tcp", ":"+*pAddr)
 	defer func(listener net.Listener) {
+		fmt.Println("HERE2")
 		err := listener.Close()
 		if err != nil {
 			fmt.Println("Error closing listener", err)
 			return
+		} else {
+			fmt.Println("closed listener")
 		}
 	}(listener)
+	fmt.Println("HERE3")
 	rpc.Accept(listener)
+	fmt.Println("HERE4")
+
 }
