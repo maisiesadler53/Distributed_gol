@@ -15,7 +15,13 @@ type GameOfLifeWorker struct {
 	tick  chan bool
 	world chan [][]byte
 	turn  chan int
-	// done  bool
+	ctrl  chan rune
+	// done  bool // I am making this in case AliveCellsCountTick or Control sends smth through but after it gets stuck
+}
+
+func (s *GameOfLifeWorker) Control(req stubs.Request, res *stubs.Response) (err error) {
+	s.ctrl <- req.Ctrl
+	return
 }
 
 func (s *GameOfLifeWorker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err error) {
@@ -54,6 +60,14 @@ func (s *GameOfLifeWorker) GenerateGameOfLife(req stubs.Request, res *stubs.Resp
 		case <-s.tick:
 			s.world <- world
 			s.turn <- turn
+		case ctrl := <-s.ctrl:
+			if ctrl == 's' {
+				s.world <- world
+			} else if ctrl == 'q' {
+
+			} else if ctrl == 'p' {
+
+			}
 		default: // If not, it continues
 		}
 		for i := startX; i < endX; i++ {
@@ -98,9 +112,10 @@ func main() {
 	world := make(chan [][]byte)
 	tick := make(chan bool)
 	turn := make(chan int)
+	ctrl := make(chan rune)
 	// done := false
 
-	err := rpc.Register(&GameOfLifeWorker{tick, world, turn})
+	err := rpc.Register(&GameOfLifeWorker{tick, world, turn, ctrl})
 	if err != nil {
 		fmt.Println("Error registering listener", err)
 		return

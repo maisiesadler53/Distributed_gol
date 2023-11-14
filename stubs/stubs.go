@@ -21,4 +21,5 @@ type Request struct {
 	EndX   int
 	StartY int
 	EndY   int
+	Ctrl   rune
 }
