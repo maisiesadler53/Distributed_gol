@@ -129,43 +129,43 @@ thisLoop:
 	nextWorld = [][]byte{}
 	fmt.Println("There")
 	// c.events <- TurnComplete{turn}
-	//select {
-	//case key := <-keyPresses:
-	//	if key == 's' {
-	//		c.ioCommand <- 0
-	//		filename = filename + "x" + strconv.Itoa(turn)
-	//		c.ioFilename <- filename
-	//		for i, row := range world {
-	//			for j := range row {
-	//				c.ioOutput <- world[i][j]
-	//			}
-	//		}
-	//		c.events <- ImageOutputComplete{turn, filename}
-	//	} else if key == 'q' {
-	//		c.ioCommand <- 0
-	//		filename = filename + "x" + strconv.Itoa(turn)
-	//		c.ioFilename <- filename
-	//		for i, row := range world {
-	//			for j := range row {
-	//				c.ioOutput <- world[i][j]
-	//			}
-	//		}
-	//
-	//		c.events <- ImageOutputComplete{turn, filename}
-	//		break executeLoop
-	//	} else if key == 'p' {
-	//		c.events <- StateChange{turn, Paused}
-	//
-	//		for {
-	//			keyAgain := <-keyPresses
-	//			if keyAgain == 'p' {
-	//				c.events <- StateChange{turn, Executing}
-	//				break
-	//			}
-	//		}
-	//	}
-	//default:
-	//}
+	// select {
+	// case key := <-keyPresses:
+	// 	if key == 's' {
+	// 		c.ioCommand <- 0
+	// 		filename = filename + "x" + strconv.Itoa(turn)
+	// 		c.ioFilename <- filename
+	// 		for i, row := range world {
+	// 			for j := range row {
+	// 				c.ioOutput <- world[i][j]
+	// 			}
+	// 		}
+	// 		c.events <- ImageOutputComplete{turn, filename}
+	// 	} else if key == 'q' {
+	// 		c.ioCommand <- 0
+	// 		filename = filename + "x" + strconv.Itoa(turn)
+	// 		c.ioFilename <- filename
+	// 		for i, row := range world {
+	// 			for j := range row {
+	// 				c.ioOutput <- world[i][j]
+	// 			}
+	// 		}
+
+	// 		c.events <- ImageOutputComplete{turn, filename}
+	// 		break executeLoop
+	// 	} else if key == 'p' {
+	// 		c.events <- StateChange{turn, Paused}
+
+	// 		for {
+	// 			keyAgain := <-keyPresses
+	// 			if keyAgain == 'p' {
+	// 				c.events <- StateChange{turn, Executing}
+	// 				break
+	// 			}
+	// 		}
+	// 	}
+	// default:
+	// }
 
 	// TODO: Report the final state using FinalTurnCompleteEvent.
 	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
