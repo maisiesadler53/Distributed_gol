@@ -168,4 +168,5 @@ func main() {
 
 	//handles incoming RPC requests until closed
 	rpc.Accept(listener)
+
 }

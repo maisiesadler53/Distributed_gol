@@ -20,7 +20,7 @@ type distributorChannels struct {
 }
 
 //call
-func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, quit chan bool, worldChan chan [][]byte, turn chan int) {
+func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, quit chan bool, worldChan chan [][]byte, turn chan int, doneChan chan bool) {
 	request := stubs.Request{
 		World:  world,
 		Params: params,
@@ -37,6 +37,7 @@ func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Par
 	//send turn and world to the distributer
 	turn <- response.Turn
 	worldChan <- response.WorldPart
+	doneChan <- true
 }
 
 func calculateAliveCells(p Params, world [][]byte) []util.Cell {
@@ -100,12 +101,14 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	quitChan := make(chan bool, 1)
 	worldChan := make(chan [][]byte, 1)
 	turnChan := make(chan int, 1)
-	go callGenerateGameOfLife(client, world, stubs.Params{p.Turns, p.Threads, p.ImageHeight, p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight, quitChan, worldChan, turnChan)
+	doneChan := make(chan bool, 1)
+	go callGenerateGameOfLife(client, world, stubs.Params{p.Turns, p.Threads, p.ImageHeight, p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight, doneChan, worldChan, turnChan, doneChan)
 
 	//listen for key presses or ticks until told to stop by the callGenerateGameOfLife function
 	ticker := time.NewTicker(2 * time.Second)
 	go func() {
 		quit := false
+
 	tickerCtrlLoop:
 		for {
 			select {
@@ -151,6 +154,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 							//wait until p is pressed again to continue
 							request := stubs.Request{Ctrl: key}
 							response := new(stubs.Response)
+
 							client.Call(stubs.Control, request, response)
 							c.events <- StateChange{response.Turn, Executing}
 							break
@@ -160,8 +164,13 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
-					return
+					turnChan <- response.Turn
+					worldChan <- response.WorldPart
+					break tickerCtrlLoop
 				}
+			case <-doneChan:
+				fmt.Println("break loop")
+				break tickerCtrlLoop
 				//if the GenerateGameOfLife call ends then leave the loop
 			default: // If no ticker or control continue
 			}
@@ -178,28 +187,28 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 		<-c.ioIdle
 		c.events <- StateChange{turn, Quitting}
 		close(c.events)
-	} else {
-		nextWorld = <-worldChan
-		turn = <-turnChan
-		world = append([][]byte{}, nextWorld...)
-		nextWorld = [][]byte{}
-		//report final state to events
-		c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
-		//send matrix to make pgm
-		c.ioCommand <- 0
-		filename = filename + "x" + strconv.Itoa(turn)
-		c.ioFilename <- filename
-		for i, row := range world {
-			for j := range row {
-				c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
-			}
-		}
-		// Make sure that the Io has finished any output before exiting.
-		c.ioCommand <- ioCheckIdle
-		<-c.ioIdle
-		c.events <- StateChange{turn, Quitting}
-		ticker.Stop()
-		// Close the channel to stop the SDL goroutine gracefully. Removing may cause deadlock.
-		close(c.events)
 	}
+	nextWorld = <-worldChan
+	turn = <-turnChan
+	world = append([][]byte{}, nextWorld...)
+	nextWorld = [][]byte{}
+	//report final state to events
+	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
+	//send matrix to make pgm
+	c.ioCommand <- 0
+	filename = filename + "x" + strconv.Itoa(turn)
+	c.ioFilename <- filename
+	for i, row := range world {
+		for j := range row {
+			c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
+		}
+	}
+	// Make sure that the Io has finished any output before exiting.
+	c.ioCommand <- ioCheckIdle
+	<-c.ioIdle
+	c.events <- StateChange{turn, Quitting}
+	ticker.Stop()
+	// Close the channel to stop the SDL goroutine gracefully. Removing may cause deadlock.
+	close(c.events)
+
 }
