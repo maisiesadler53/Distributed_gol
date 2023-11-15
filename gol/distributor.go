@@ -28,14 +28,16 @@ func makeCall(client *rpc.Client, world [][]byte, params stubs.Params, startX in
 		StartY: startY,
 		EndY:   endY,
 	}
+	//make response to hold the reply
 	response := new(stubs.Response)
+	//call GenerateGameOfLife
 	client.Call(stubs.GenerateGameOfLife, request, response)
+	//once call is over tell the function listening for commands and ticks to stop
 	done <- true
-	newWorld := response.WorldPart
+	//send
+	//newWorld := response.WorldPart
 	turn <- response.Turn
-
-	worldChan <- newWorld
-
+	worldChan <- response.WorldPart
 }
 
 func calculateAliveCells(p Params, world [][]byte) []util.Cell {
@@ -104,7 +106,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 	go makeCall(client, world, stubs.Params{p.Turns, p.Threads, p.ImageHeight, p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight, done, worldChan, turnChan)
 	go func() {
-	thisLoop:
+	ctrlTickerLoop:
 		for {
 			select {
 			case <-ticker.C:
@@ -132,8 +134,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
-					ticker.Stop()
-					break thisLoop
+					return
 				} else if key == 'p' {
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
@@ -152,23 +153,16 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					}
 				}
 			case <-done:
-				break thisLoop
+				break ctrlTickerLoop
 			default: // If not, it continues
 			}
 		}
 	}()
 
-	fmt.Println("here")
 	nextWorld = <-worldChan
-	fmt.Println("There")
 	turn = <-turnChan
-	//for i := 0; i < p.Threads; i++ {
-	//	part := <-worldParts[i]
-	//	nextWorld = append(nextWorld, part...)
-	//}
 	world = append([][]byte{}, nextWorld...)
 	nextWorld = [][]byte{}
-	fmt.Println("There")
 
 	// TODO: Report the final state using FinalTurnCompleteEvent.
 	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
