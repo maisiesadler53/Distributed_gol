@@ -22,27 +22,24 @@ type GameOfLifeWorker struct {
 func (s *GameOfLifeWorker) Control(req stubs.Request, res *stubs.Response) (err error) {
 	//send control key to GenerateGameOfLife
 	s.ctrl <- req.Ctrl
+	fmt.Println("trying to get control")
 	//receive world from GenerateGameOflife and give to response
 	res.WorldPart = <-s.world
 	res.Turn = <-s.turn
+	fmt.Println("got the control")
 	return
 }
 
 func (s *GameOfLifeWorker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err error) {
 	//tell GameOfLife that ticker has been sent
 	s.tick <- true
-	//return from function if either the world and turn are received from generateGameOfLife
-	///or it is ended by the done channel
-	for {
-		select {
-		case <-s.done:
-			return
-		default:
-			res.WorldPart = <-s.world
-			res.Turn = <-s.turn
-			return
-		}
-	}
+	//return from function if the world and turn are received from generateGameOfLife
+	fmt.Println("trying to send count")
+	res.WorldPart = <-s.world
+	res.Turn = <-s.turn
+	fmt.Println("got the count")
+	return
+
 }
 
 func (s *GameOfLifeWorker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
@@ -65,6 +62,7 @@ func (s *GameOfLifeWorker) GenerateGameOfLife(req stubs.Request, res *stubs.Resp
 	//loop through each turn and update state
 turnLoop:
 	for turn = 0; turn < p.Turns; turn++ {
+		fmt.Println("im looping")
 		//check if a key has been pressed or ticker
 		select {
 		//if ticker received send world and turn
@@ -93,11 +91,15 @@ turnLoop:
 						break
 					}
 				}
+			} else if ctrl == 'k' {
+				s.world <- req.World
+				s.turn <- turn
+				break turnLoop
 			}
 			//if no ticker or ctrl just continue
 		default:
 		}
-		//loop through the positions in the world and add up the number or surroundng live cells
+		//loop through the positions in the world and add up the number or surrounding live cells
 		for i := startX; i < endX; i++ {
 			for j := startY; j < endY; j++ {
 				sum := 0
@@ -127,10 +129,10 @@ turnLoop:
 			nextWorld[i] = make([]byte, height)
 		}
 	}
-
 	//after all turns set the response to be the number of turns and the final world state
 	res.WorldPart = req.World
 	res.Turn = turn
+	fmt.Println("set the world ")
 	return
 }
 

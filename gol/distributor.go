@@ -19,7 +19,8 @@ type distributorChannels struct {
 	ioInput    <-chan uint8
 }
 
-func makeCall(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, done chan bool, worldChan chan [][]byte, turn chan int) {
+//call
+func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, quit chan bool, worldChan chan [][]byte, turn chan int) {
 	request := stubs.Request{
 		World:  world,
 		Params: params,
@@ -32,10 +33,8 @@ func makeCall(client *rpc.Client, world [][]byte, params stubs.Params, startX in
 	response := new(stubs.Response)
 	//call GenerateGameOfLife
 	client.Call(stubs.GenerateGameOfLife, request, response)
-	//once call is over tell the function listening for commands and ticks to stop
-	done <- true
-	//send
-	//newWorld := response.WorldPart
+	//once call is over tell the distributer to stop listening for commands and ticks
+	//send turn and world to the distributer
 	turn <- response.Turn
 	worldChan <- response.WorldPart
 }
@@ -54,12 +53,15 @@ func calculateAliveCells(p Params, world [][]byte) []util.Cell {
 
 func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	server := "127.0.0.1:8040"
+	//establish connection with RPC server and handle errors
 	client, err := rpc.Dial("tcp", server)
 	if err != nil {
 		// Handle the error, e.g., log it or return
 		fmt.Println("Error connecting to RPC server:", err)
 		return
 	}
+
+	//close connection when distributer ends
 	defer func(client *rpc.Client) {
 		err := client.Close()
 		if err != nil {
@@ -68,21 +70,22 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 		}
 	}(client)
 
+	//read pgm image
 	c.ioCommand <- 1 // command to read a pgm image
-
 	filename := strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight)
 	c.ioFilename <- filename // giving which file to read
 
-	// TODO: Create a 2D slice to store the world.
+	//create slice to store world
 	world := make([][]byte, p.ImageWidth)
 	nextWorld := [][]byte{}
 	for i := range world {
 		world[i] = make([]byte, p.ImageHeight)
 	}
 
+	//read pgm image into matrix
 	for i, row := range world {
 		for j := range row {
-			world[i][j] = <-c.ioInput // Writing the pgm image in a matrix
+			world[i][j] = <-c.ioInput
 			if world[i][j] == 255 {
 				c.events <- CellFlipped{
 					CompletedTurns: 0,
@@ -92,25 +95,22 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 		}
 	}
 
+	//call the generateGameOfLife
 	turn := 0
-
-	// TODO: Execute all turns of the Game of Life.
-	//worldParts := make([]chan [][]byte, p.Threads)
-	//for i := range worldParts {
-	//	worldParts[i] = make(chan [][]byte) // Channels for parallel calculation
-	//}
-	ticker := time.NewTicker(2 * time.Second) // This is for step 3
-	done := make(chan bool, 1)
+	quitChan := make(chan bool, 1)
 	worldChan := make(chan [][]byte, 1)
 	turnChan := make(chan int, 1)
+	go callGenerateGameOfLife(client, world, stubs.Params{p.Turns, p.Threads, p.ImageHeight, p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight, quitChan, worldChan, turnChan)
 
-	go makeCall(client, world, stubs.Params{p.Turns, p.Threads, p.ImageHeight, p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight, done, worldChan, turnChan)
+	//listen for key presses or ticks until told to stop by the callGenerateGameOfLife function
+	ticker := time.NewTicker(2 * time.Second)
 	go func() {
-	ctrlTickerLoop:
+		quit := false
+	tickerCtrlLoop:
 		for {
 			select {
 			case <-ticker.C:
-				fmt.Println("Ticker called")
+				//call AliceCellCount every tick, receive world and send to alivecell event
 				request := stubs.Request{}
 				response := new(stubs.Response)
 				client.Call(stubs.AliveCellCount, request, response)
@@ -118,6 +118,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 				c.events <- AliveCellsCount{response.Turn, len(calculateAliveCells(p, newWorld))}
 			case key := <-keyPresses:
 				if key == 's' {
+					//call the Control rpc call and produce pgm image from the current world
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
@@ -131,11 +132,15 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					}
 					c.events <- ImageOutputComplete{response.Turn, filename}
 				} else if key == 'q' {
+					//tell the rpc to stop executing and leave the function loop
+					quit = true
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
-					return
+					break tickerCtrlLoop
+
 				} else if key == 'p' {
+					//call the control rpc and tell event to pause execution
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
@@ -143,46 +148,58 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					for {
 						keyAgain := <-keyPresses
 						if keyAgain == 'p' {
+							//wait until p is pressed again to continue
 							request := stubs.Request{Ctrl: key}
 							response := new(stubs.Response)
 							client.Call(stubs.Control, request, response)
-
 							c.events <- StateChange{response.Turn, Executing}
 							break
 						}
 					}
+				} else if key == 'k' {
+					request := stubs.Request{Ctrl: key}
+					response := new(stubs.Response)
+					client.Call(stubs.Control, request, response)
+					return
 				}
-			case <-done:
-				break ctrlTickerLoop
-			default: // If not, it continues
+				//if the GenerateGameOfLife call ends then leave the loop
+			default: // If no ticker or control continue
 			}
 		}
+		quitChan <- quit
+		return
 	}()
-
-	nextWorld = <-worldChan
-	turn = <-turnChan
-	world = append([][]byte{}, nextWorld...)
-	nextWorld = [][]byte{}
-
-	// TODO: Report the final state using FinalTurnCompleteEvent.
-	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
-
-	c.ioCommand <- 0
-	filename = filename + "x" + strconv.Itoa(turn)
-	c.ioFilename <- filename
-	for i, row := range world {
-		for j := range row {
-			c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
+	//receive the new world and number of turns from the generateGameOfLife call and put in a new
+	quit := <-quitChan
+	if quit {
+		<-worldChan
+		<-turnChan
+		c.ioCommand <- ioCheckIdle
+		<-c.ioIdle
+		c.events <- StateChange{turn, Quitting}
+		close(c.events)
+	} else {
+		nextWorld = <-worldChan
+		turn = <-turnChan
+		world = append([][]byte{}, nextWorld...)
+		nextWorld = [][]byte{}
+		//report final state to events
+		c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
+		//send matrix to make pgm
+		c.ioCommand <- 0
+		filename = filename + "x" + strconv.Itoa(turn)
+		c.ioFilename <- filename
+		for i, row := range world {
+			for j := range row {
+				c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
+			}
 		}
+		// Make sure that the Io has finished any output before exiting.
+		c.ioCommand <- ioCheckIdle
+		<-c.ioIdle
+		c.events <- StateChange{turn, Quitting}
+		ticker.Stop()
+		// Close the channel to stop the SDL goroutine gracefully. Removing may cause deadlock.
+		close(c.events)
 	}
-	// Make sure that the Io has finished any output before exiting.
-	c.ioCommand <- ioCheckIdle
-	<-c.ioIdle
-
-	c.events <- StateChange{turn, Quitting}
-	ticker.Stop()
-
-	// Close the channel to stop the SDL goroutine gracefully. Removing may cause deadlock.
-	close(c.events)
-
 }
