@@ -6,27 +6,27 @@ import (
 	"math/rand"
 	"net"
 	"net/rpc"
+	"os"
 	"time"
 
 	"uk.ac.bris.cs/gameoflife/stubs"
 )
 
 type GameOfLifeWorker struct {
-	tick  chan bool
-	world chan [][]byte
-	turn  chan int
-	ctrl  chan rune
-	done  chan bool
+	tick          chan bool
+	world         chan [][]byte
+	turn          chan int
+	ctrl          chan rune
+	done          chan bool
+	closeListener chan bool
 }
 
 func (s *GameOfLifeWorker) Control(req stubs.Request, res *stubs.Response) (err error) {
 	//send control key to GenerateGameOfLife
 	s.ctrl <- req.Ctrl
-	fmt.Println("trying to get control")
 	//receive world from GenerateGameOflife and give to response
 	res.WorldPart = <-s.world
 	res.Turn = <-s.turn
-	fmt.Println("got the control")
 	return
 }
 
@@ -34,10 +34,8 @@ func (s *GameOfLifeWorker) AliveCellCountTick(req stubs.Request, res *stubs.Resp
 	//tell GameOfLife that ticker has been sent
 	s.tick <- true
 	//return from function if the world and turn are received from generateGameOfLife
-	fmt.Println("trying to send count")
 	res.WorldPart = <-s.world
 	res.Turn = <-s.turn
-	fmt.Println("got the count")
 	return
 
 }
@@ -62,7 +60,6 @@ func (s *GameOfLifeWorker) GenerateGameOfLife(req stubs.Request, res *stubs.Resp
 	//loop through each turn and update state
 turnLoop:
 	for turn = 0; turn < p.Turns; turn++ {
-		fmt.Println("im looping")
 		//check if a key has been pressed or ticker
 		select {
 		//if ticker received send world and turn
@@ -75,9 +72,9 @@ turnLoop:
 				s.world <- req.World
 				s.turn <- turn
 			} else if ctrl == 'q' {
-				//if q send world and turn and then end the process by leaving the loop
 				s.world <- req.World
 				s.turn <- turn
+				//end the process by leaving the loop
 				break turnLoop
 			} else if ctrl == 'p' {
 				//if p send world and wait in loop until p pressed again, then send again
@@ -94,6 +91,7 @@ turnLoop:
 			} else if ctrl == 'k' {
 				s.world <- req.World
 				s.turn <- turn
+				s.closeListener <- true
 				break turnLoop
 			}
 			//if no ticker or ctrl just continue
@@ -132,7 +130,6 @@ turnLoop:
 	//after all turns set the response to be the number of turns and the final world state
 	res.WorldPart = req.World
 	res.Turn = turn
-	fmt.Println("set the world ")
 	return
 }
 
@@ -145,9 +142,10 @@ func main() {
 	turn := make(chan int, 1)
 	ctrl := make(chan rune)
 	done := make(chan bool)
+	closeListener := make(chan bool)
 
 	//register rpc calls
-	err := rpc.Register(&GameOfLifeWorker{tick, world, turn, ctrl, done})
+	err := rpc.Register(&GameOfLifeWorker{tick, world, turn, ctrl, done, closeListener})
 	if err != nil {
 		fmt.Println("Error registering listener", err)
 		return
@@ -167,6 +165,18 @@ func main() {
 	}(listener)
 
 	//handles incoming RPC requests until closed
-	rpc.Accept(listener)
+	go rpc.Accept(listener)
+	for {
+		select {
+		case <-closeListener:
+			time.Sleep(2 * time.Second)
+			err := listener.Close()
+			if err != nil {
+				fmt.Println("Error closing listener", err)
+				return
+			}
+			os.Exit(0)
+		}
+	}
 
 }
