@@ -166,17 +166,13 @@ func main() {
 
 	//handles incoming RPC requests until closed
 	go rpc.Accept(listener)
-	for {
-		select {
-		case <-closeListener:
-			time.Sleep(2 * time.Second)
-			err := listener.Close()
-			if err != nil {
-				fmt.Println("Error closing listener", err)
-				return
-			}
-			os.Exit(0)
-		}
+	<-closeListener
+	time.Sleep(2 * time.Second)
+	err = listener.Close()
+	if err != nil {
+		fmt.Println("Error closing listener", err)
+		return
 	}
+	os.Exit(0)
 
 }
