@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net"
 	"net/rpc"
-	"os"
 	"time"
 
 	"uk.ac.bris.cs/gameoflife/stubs"
@@ -159,7 +158,7 @@ func main() {
 	defer func(listener net.Listener) {
 		err := listener.Close()
 		if err != nil {
-			fmt.Println("Error closing listener", err)
+			fmt.Println("Error closing listener from defer", err)
 			return
 		}
 	}(listener)
@@ -167,12 +166,5 @@ func main() {
 	//handles incoming RPC requests until closed
 	go rpc.Accept(listener)
 	<-closeListener
-	time.Sleep(2 * time.Second)
-	err = listener.Close()
-	if err != nil {
-		fmt.Println("Error closing listener", err)
-		return
-	}
-	os.Exit(0)
-
+	return
 }

@@ -136,6 +136,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					c.events <- ImageOutputComplete{response.Turn, filename}
 				} else if key == 'q' {
 					//tell the rpc to stop executing and leave the function loop
+					ticker.Stop()
 					quit = true
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
@@ -154,22 +155,20 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 							//wait until p is pressed again to continue
 							request := stubs.Request{Ctrl: key}
 							response := new(stubs.Response)
-
 							client.Call(stubs.Control, request, response)
 							c.events <- StateChange{response.Turn, Executing}
 							break
 						}
 					}
 				} else if key == 'k' {
+					//send k and break loop but don't tell to quit
+					ticker.Stop()
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
-					turnChan <- response.Turn
-					worldChan <- response.WorldPart
 					break tickerCtrlLoop
 				}
 			case <-doneChan:
-				fmt.Println("break loop")
 				break tickerCtrlLoop
 				//if the GenerateGameOfLife call ends then leave the loop
 			default: // If no ticker or control continue
@@ -188,12 +187,12 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 		c.events <- StateChange{turn, Quitting}
 		close(c.events)
 	}
+
 	nextWorld = <-worldChan
 	turn = <-turnChan
 	world = append([][]byte{}, nextWorld...)
 	nextWorld = [][]byte{}
-	//report final state to events
-	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
+
 	//send matrix to make pgm
 	c.ioCommand <- 0
 	filename = filename + "x" + strconv.Itoa(turn)
@@ -203,12 +202,16 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 			c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
 		}
 	}
+	c.events <- ImageOutputComplete{turn, filename}
+	//report final state to events
+	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
 	// Make sure that the Io has finished any output before exiting.
 	c.ioCommand <- ioCheckIdle
 	<-c.ioIdle
 	c.events <- StateChange{turn, Quitting}
-	ticker.Stop()
 	// Close the channel to stop the SDL goroutine gracefully. Removing may cause deadlock.
+	err = client.Close()
+
 	close(c.events)
 
 }
