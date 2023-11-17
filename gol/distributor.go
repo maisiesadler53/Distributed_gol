@@ -102,7 +102,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	worldChan := make(chan [][]byte, 1)
 	turnChan := make(chan int, 1)
 	doneChan := make(chan bool, 1)
-	go callGenerateGameOfLife(client, world, stubs.Params{p.Turns, p.Threads, p.ImageHeight, p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight, doneChan, worldChan, turnChan, doneChan)
+	go callGenerateGameOfLife(client, world, stubs.Params{Turns: p.Turns, Threads: p.Threads, ImageWidth: p.ImageHeight, ImageHeight: p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight, doneChan, worldChan, turnChan, doneChan)
 
 	//listen for key presses or ticks until told to stop by the callGenerateGameOfLife function
 	ticker := time.NewTicker(2 * time.Second)
@@ -177,7 +177,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 		quitChan <- quit
 		return
 	}()
-	//receive the new world and number of turns from the generateGameOfLife call and put in a new
+	// receive the new world and number of turns from the generateGameOfLife call and put in a new
 	quit := <-quitChan
 	if quit {
 		<-worldChan
@@ -210,7 +210,6 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	<-c.ioIdle
 	c.events <- StateChange{turn, Quitting}
 	// Close the channel to stop the SDL goroutine gracefully. Removing may cause deadlock.
-	err = client.Close()
 
 	close(c.events)
 

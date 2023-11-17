@@ -1,8 +1,10 @@
 package stubs
 
-var GenerateGameOfLife = "GameOfLifeWorker.GenerateGameOfLife"
-var AliveCellCount = "GameOfLifeWorker.AliveCellCountTick"
-var Control = "GameOfLifeWorker.Control"
+var GenerateGameOfLife = "Broker.GenerateGameOfLife"
+var AliveCellCount = "Broker.AliveCellCountTick"
+var Control = "Broker.Control"
+var GeneratePart = "Worker.GeneratePart"
+var Close = "Worker.Close"
 
 type Response struct {
 	WorldPart [][]byte

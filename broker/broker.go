@@ -11,7 +11,7 @@ import (
 	"uk.ac.bris.cs/gameoflife/stubs"
 )
 
-type GameOfLifeWorker struct {
+type Broker struct {
 	tick          chan bool
 	world         chan [][]byte
 	turn          chan int
@@ -20,7 +20,15 @@ type GameOfLifeWorker struct {
 	closeListener chan bool
 }
 
-func (s *GameOfLifeWorker) Control(req stubs.Request, res *stubs.Response) (err error) {
+func callWorker(client *rpc.Client, req stubs.Request, res *stubs.Response, worldChan chan [][]byte) {
+
+	client.Call(stubs.GeneratePart, req, res)
+	//once call is over tell the distributer to stop listening for commands and ticks
+	//send turn and world to the distributer
+	worldChan <- res.WorldPart
+}
+
+func (s *Broker) Control(req stubs.Request, res *stubs.Response) (err error) {
 	//send control key to GenerateGameOfLife
 	s.ctrl <- req.Ctrl
 	//receive world from GenerateGameOflife and give to response
@@ -29,7 +37,7 @@ func (s *GameOfLifeWorker) Control(req stubs.Request, res *stubs.Response) (err 
 	return
 }
 
-func (s *GameOfLifeWorker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err error) {
+func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err error) {
 	//tell GameOfLife that ticker has been sent
 	s.tick <- true
 	//return from function if the world and turn are received from generateGameOfLife
@@ -39,21 +47,43 @@ func (s *GameOfLifeWorker) AliveCellCountTick(req stubs.Request, res *stubs.Resp
 
 }
 
-func (s *GameOfLifeWorker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
+func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
+	fmt.Println("connected")
+	server := "127.0.0.1:8030"
+	//establish connection with RPC server and handle errors
+	client, err := rpc.Dial("tcp", server)
+	if err != nil {
+		// Handle the error, e.g., log it or return
+		fmt.Println("Error connecting to RPC server:", err)
+		return
+	}
+
+	//close connection when distributer ends
+	defer func(client *rpc.Client) {
+		err := client.Close()
+		if err != nil {
+			fmt.Println("Error closing connection:", err)
+			return
+		}
+	}(client)
+
 	//initiate variables
-	startX := req.StartX
-	startY := req.StartY
-	endX := req.EndX
-	endY := req.EndY
-	height := endY - startY
-	width := endX - startX
+	// startX := req.StartX
+	// startY := req.StartY
+	// endX := req.EndX
+	// endY := req.EndY
+	// height := endY - startY
+	// width := endX - startX
 	p := req.Params
 	turn := 0
 
 	//make a world to contain the updated state each loop
-	nextWorld := make([][]byte, width)
-	for i := range nextWorld {
-		nextWorld[i] = make([]byte, height)
+	world := append([][]byte{}, req.World...)
+	nextWorld := [][]byte{}
+
+	worldParts := make([]chan [][]byte, p.Threads)
+	for i := range worldParts {
+		worldParts[i] = make(chan [][]byte) // Channels for parallel calculation
 	}
 
 	//loop through each turn and update state
@@ -63,71 +93,67 @@ turnLoop:
 		select {
 		//if ticker received send world and turn
 		case <-s.tick:
-			s.world <- req.World
+			s.world <- world
 			s.turn <- turn
 		case ctrl := <-s.ctrl:
 			if ctrl == 's' {
 				//if s control send the world and turn to the control function
-				s.world <- req.World
+				s.world <- world
 				s.turn <- turn
 			} else if ctrl == 'q' {
-				s.world <- req.World
+				s.world <- world
 				s.turn <- turn
 				//end the process by leaving the loop
 				break turnLoop
 			} else if ctrl == 'p' {
 				//if p send world and wait in loop until p pressed again, then send again
-				s.world <- req.World
+				s.world <- world
 				s.turn <- turn
 				for {
 					ctrlAgain := <-s.ctrl
 					if ctrlAgain == 'p' {
-						s.world <- req.World
+						s.world <- world
 						s.turn <- turn
 						break
 					}
 				}
 			} else if ctrl == 'k' {
-				s.world <- req.World
+				request := stubs.Request{}
+				response := new(stubs.Response)
+				client.Call(stubs.Close, request, response)
+				s.world <- world
 				s.turn <- turn
 				s.closeListener <- true
 				break turnLoop
 			}
+
 			//if no ticker or ctrl just continue
 		default:
 		}
 		//loop through the positions in the world and add up the number or surrounding live cells
-		for i := startX; i < endX; i++ {
-			for j := startY; j < endY; j++ {
-				sum := 0
-				adj := []int{-1, 0, 1}
-				for _, n1 := range adj {
-					for _, n2 := range adj {
-						if n1 == 0 && n2 == 0 {
-						} else if req.World[(i+n1+p.ImageWidth)%p.ImageWidth][(j+n2+p.ImageHeight)%p.ImageHeight] == 255 {
-							sum++
-						}
-					}
-				}
-				//change cell depending on surrounding cells
-				if (req.World[i][j] == 255) && (sum < 2 || sum > 3) {
-					nextWorld[i-startX][j-startY] = 0
-				} else if (req.World[i][j] == 0) && (sum == 3) {
-					nextWorld[i-startX][j-startY] = 255
-				} else {
-					nextWorld[i-startX][j-startY] = req.World[i][j]
-				}
+		for i := 0; i < p.Threads; i++ {
+			req := stubs.Request{
+				World:  world,
+				Params: p,
+				StartX: i * p.ImageHeight / p.Threads,
+				EndX:   (i + 1) * p.ImageHeight / p.Threads,
+				StartY: 0,
+				EndY:   p.ImageWidth,
 			}
+			res := new(stubs.Response)
+			go callWorker(client, req, res, worldParts[i]) // every part goes to 1 worldPart channel
+		}
+
+		for i := 0; i < p.Threads; i++ {
+			part := <-worldParts[i]
+			nextWorld = append(nextWorld, part...)
 		}
 		//set the world to the nextWorld and reset the nextWorld
-		req.World = append([][]byte{}, nextWorld...)
-		nextWorld = make([][]byte, width)
-		for i := range nextWorld {
-			nextWorld[i] = make([]byte, height)
-		}
+		world = append([][]byte{}, nextWorld...)
+		nextWorld = [][]byte{}
 	}
 	//after all turns set the response to be the number of turns and the final world state
-	res.WorldPart = req.World
+	res.WorldPart = world
 	res.Turn = turn
 	return
 }
@@ -144,7 +170,7 @@ func main() {
 	closeListener := make(chan bool)
 
 	//register rpc calls
-	err := rpc.Register(&GameOfLifeWorker{tick, world, turn, ctrl, done, closeListener})
+	err := rpc.Register(&Broker{tick, world, turn, ctrl, done, closeListener})
 	if err != nil {
 		fmt.Println("Error registering listener", err)
 		return
