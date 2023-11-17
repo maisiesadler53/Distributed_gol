@@ -121,6 +121,7 @@ turnLoop:
 				request := stubs.Request{}
 				response := new(stubs.Response)
 				client.Call(stubs.Close, request, response)
+				fmt.Println("HERE")
 				s.world <- world
 				s.turn <- turn
 				s.closeListener <- true

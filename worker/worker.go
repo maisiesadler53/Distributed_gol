@@ -67,7 +67,7 @@ func main() {
 	closeListener := make(chan bool, 1)
 
 	//register rpc calls
-	err := rpc.Register(&Worker{})
+	err := rpc.Register(&Worker{closeListener: closeListener})
 	if err != nil {
 		fmt.Println("Error registering listener", err)
 		return
@@ -89,5 +89,6 @@ func main() {
 	//handles incoming RPC requests until closed
 	go rpc.Accept(listener)
 	<-closeListener
+	time.Sleep(2 * time.Second)
 	return
 }
