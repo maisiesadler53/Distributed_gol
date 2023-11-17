@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net"
 	"net/rpc"
+	"strconv"
 	"time"
 
 	"uk.ac.bris.cs/gameoflife/stubs"
@@ -49,31 +50,41 @@ func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err
 
 func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
 	fmt.Println("connected")
-	server := "127.0.0.1:8030"
-	//establish connection with RPC server and handle errors
-	client, err := rpc.Dial("tcp", server)
-	if err != nil {
-		// Handle the error, e.g., log it or return
-		fmt.Println("Error connecting to RPC server:", err)
-		return
+	var servers []string
+	for i := 0; i < req.Params.Threads; i++ {
+		servers = append(servers, "127.0.0.1:80"+strconv.Itoa(i)+"0")
 	}
 
-	//close connection when distributer ends
-	defer func(client *rpc.Client) {
-		err := client.Close()
-		if err != nil {
-			fmt.Println("Error closing connection:", err)
+	//establish connection with RPC server and handle errors
+	var clients []*rpc.Client
+	for _, server := range servers {
+		client, error := rpc.Dial("tcp", server)
+		clients = append(clients, client)
+		if error != nil {
+			// Handle the error, e.g., log it or return
+			fmt.Println("Error connecting to RPC server:", err)
 			return
 		}
-	}(client)
+	}
+	// client, err := rpc.Dial("tcp", server)
+	// if err != nil {
+	// 	// Handle the error, e.g., log it or return
+	// 	fmt.Println("Error connecting to RPC server:", err)
+	// 	return
+	// }
 
-	//initiate variables
-	// startX := req.StartX
-	// startY := req.StartY
-	// endX := req.EndX
-	// endY := req.EndY
-	// height := endY - startY
-	// width := endX - startX
+	//close connection when distributer ends
+
+	for _, client := range clients {
+		defer func(client *rpc.Client) {
+			err := client.Close()
+			if err != nil {
+				fmt.Println("Error closing connection:", err)
+				return
+			}
+		}(client)
+	}
+
 	p := req.Params
 	turn := 0
 
@@ -120,8 +131,9 @@ turnLoop:
 			} else if ctrl == 'k' {
 				request := stubs.Request{}
 				response := new(stubs.Response)
-				client.Call(stubs.Close, request, response)
-				fmt.Println("HERE")
+				for _, client := range clients {
+					client.Call(stubs.Close, request, response)
+				}
 				s.world <- world
 				s.turn <- turn
 				s.closeListener <- true
@@ -142,7 +154,7 @@ turnLoop:
 				EndY:   p.ImageWidth,
 			}
 			res := new(stubs.Response)
-			go callWorker(client, req, res, worldParts[i]) // every part goes to 1 worldPart channel
+			go callWorker(clients[i], req, res, worldParts[i]) // every part goes to 1 worldPart channel
 		}
 
 		for i := 0; i < p.Threads; i++ {

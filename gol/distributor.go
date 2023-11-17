@@ -194,14 +194,14 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	nextWorld = [][]byte{}
 
 	//send matrix to make pgm
-	c.ioCommand <- 0
-	filename = filename + "x" + strconv.Itoa(turn)
-	c.ioFilename <- filename
-	for i, row := range world {
-		for j := range row {
-			c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
-		}
-	}
+	// c.ioCommand <- 0
+	// filename = filename + "x" + strconv.Itoa(turn)
+	// c.ioFilename <- filename
+	// for i, row := range world {
+	// 	for j := range row {
+	// 		c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
+	// 	}
+	// }
 	c.events <- ImageOutputComplete{turn, filename}
 	//report final state to events
 	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
