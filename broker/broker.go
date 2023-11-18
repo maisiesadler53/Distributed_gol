@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net"
 	"net/rpc"
-	"strconv"
 	"time"
 
 	"uk.ac.bris.cs/gameoflife/stubs"
@@ -20,6 +19,8 @@ type Broker struct {
 	done          chan bool
 	closeListener chan bool
 }
+
+var ClientStates map[string]stubs.WorldState
 
 func callWorker(client *rpc.Client, req stubs.Request, res *stubs.Response, worldChan chan [][]byte) {
 
@@ -49,10 +50,31 @@ func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err
 }
 
 func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
-	fmt.Println("connected")
+	clientID := req.ID
+	//make a world to contain the updated state each loop
+	world := [][]byte{}
+	nextWorld := [][]byte{}
+	p := req.Params
+	startTurn := 0
+	turn := 0
+
+	//if client previously connected (ID recognised) then use the state last saved for the client
+	if state, exists := ClientStates[clientID]; exists {
+		world = append([][]byte{}, state.World...)
+		startTurn = state.Turn
+	} else {
+		p = req.Params
+		world = append([][]byte{}, req.World...)
+	}
+
+	worldParts := make([]chan [][]byte, p.Threads)
+	for i := range worldParts {
+		worldParts[i] = make(chan [][]byte) // Channels for parallel calculation
+	}
+
 	var servers []string
-	for i := 0; i < req.Params.Threads; i++ {
-		servers = append(servers, "127.0.0.1:80"+strconv.Itoa(i)+"0")
+	for i := 0; i < p.Threads; i++ {
+		servers = append(servers, "127.0.0.1:8000")
 	}
 
 	//establish connection with RPC server and handle errors
@@ -66,15 +88,8 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err
 			return
 		}
 	}
-	// client, err := rpc.Dial("tcp", server)
-	// if err != nil {
-	// 	// Handle the error, e.g., log it or return
-	// 	fmt.Println("Error connecting to RPC server:", err)
-	// 	return
-	// }
 
 	//close connection when distributer ends
-
 	for _, client := range clients {
 		defer func(client *rpc.Client) {
 			err := client.Close()
@@ -85,21 +100,9 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err
 		}(client)
 	}
 
-	p := req.Params
-	turn := 0
-
-	//make a world to contain the updated state each loop
-	world := append([][]byte{}, req.World...)
-	nextWorld := [][]byte{}
-
-	worldParts := make([]chan [][]byte, p.Threads)
-	for i := range worldParts {
-		worldParts[i] = make(chan [][]byte) // Channels for parallel calculation
-	}
-
 	//loop through each turn and update state
 turnLoop:
-	for turn = 0; turn < p.Turns; turn++ {
+	for turn = startTurn; turn < p.Turns; turn++ {
 		//check if a key has been pressed or ticker
 		select {
 		//if ticker received send world and turn
@@ -164,6 +167,15 @@ turnLoop:
 		//set the world to the nextWorld and reset the nextWorld
 		world = append([][]byte{}, nextWorld...)
 		nextWorld = [][]byte{}
+
+		//store world and turns left in case disconnect in a request
+		turnsLeft := req.Params.Turns - turn
+		req.Params.Turns = turnsLeft
+		currentState := stubs.WorldState{
+			World: world,
+			Turn:  turn,
+		}
+		ClientStates[clientID] = currentState
 	}
 	//after all turns set the response to be the number of turns and the final world state
 	res.WorldPart = world
@@ -181,6 +193,7 @@ func main() {
 	ctrl := make(chan rune)
 	done := make(chan bool)
 	closeListener := make(chan bool)
+	ClientStates = make(map[string]stubs.WorldState)
 
 	//register rpc calls
 	err := rpc.Register(&Broker{tick, world, turn, ctrl, done, closeListener})
@@ -204,6 +217,7 @@ func main() {
 
 	//handles incoming RPC requests until closed
 	go rpc.Accept(listener)
+
 	<-closeListener
 	return
 }
