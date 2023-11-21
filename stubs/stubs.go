@@ -5,6 +5,7 @@ var AliveCellCount = "Broker.AliveCellCountTick"
 var Control = "Broker.Control"
 var GeneratePart = "Worker.GeneratePart"
 var Close = "Worker.Close"
+var HaloExchange = "Worker.HaloExchange"
 
 type Response struct {
 	WorldPart [][]byte
@@ -31,4 +32,12 @@ type Request struct {
 	EndY   int
 	Ctrl   rune
 	ID     string
+}
+
+type HaloRequest struct {
+	Halo []byte
+}
+
+type HaloResponse struct {
+	Halo []byte
 }

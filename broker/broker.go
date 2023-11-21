@@ -149,11 +149,19 @@ turnLoop:
 		}
 		//loop through the positions in the world and add up the number or surrounding live cells
 		for i := 0; i < p.Threads; i++ {
+			var haloWorld [][]byte
+			if i == 0 {
+				haloWorld = append(append([][]byte{}, world[p.ImageHeight-1]), append([][]byte{}, world[0:((i+1)*p.ImageHeight/p.Threads+1)]...)...)
+			} else if i == p.Threads-1 {
+				haloWorld = append(world[(i*p.ImageHeight/p.Threads-1):p.ImageHeight], world[0])
+			} else {
+				haloWorld = world[(i*p.ImageHeight/p.Threads - 1):((i+1)*p.ImageHeight/p.Threads + 1)]
+			}
 			req := stubs.Request{
-				World:  world,
+				World:  haloWorld,
 				Params: p,
-				StartX: i * p.ImageHeight / p.Threads,
-				EndX:   (i + 1) * p.ImageHeight / p.Threads,
+				StartX: 1,
+				EndX:   p.ImageHeight/p.Threads + 1,
 				StartY: 0,
 				EndY:   p.ImageWidth,
 			}
