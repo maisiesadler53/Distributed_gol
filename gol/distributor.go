@@ -20,7 +20,12 @@ type distributorChannels struct {
 }
 
 //call
+func generateUniqueID() string {
+	return fmt.Sprintf("1")
+}
+
 func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, quit chan bool, worldChan chan [][]byte, turn chan int, doneChan chan bool) {
+	ID := generateUniqueID()
 	request := stubs.Request{
 		World:  world,
 		Params: params,
@@ -28,6 +33,7 @@ func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Par
 		EndX:   endX,
 		StartY: startY,
 		EndY:   endY,
+		ID:     ID,
 	}
 	//make response to hold the reply
 	response := new(stubs.Response)

@@ -17,6 +17,11 @@ type Params struct {
 	ImageHeight int
 }
 
+type WorldState struct {
+	Turn  int
+	World [][]byte
+}
+
 type Request struct {
 	World  [][]byte
 	Params Params
@@ -25,4 +30,5 @@ type Request struct {
 	StartY int
 	EndY   int
 	Ctrl   rune
+	ID     string
 }
