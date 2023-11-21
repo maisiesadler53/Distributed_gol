@@ -120,7 +120,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 			select {
 			case <-ticker.C:
 				//call AliceCellCount every tick, receive world and send to alivecell event
-				request := stubs.Request{}
+				request := stubs.Request{ID: "1"}
 				response := new(stubs.Response)
 				client.Call(stubs.AliveCellCount, request, response)
 				newWorld := response.WorldPart
@@ -128,7 +128,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 			case key := <-keyPresses:
 				if key == 's' {
 					//call the Control rpc call and produce pgm image from the current world
-					request := stubs.Request{Ctrl: key}
+					request := stubs.Request{Ctrl: key, ID: "1"}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
 					c.ioCommand <- 0
@@ -144,14 +144,15 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					//tell the rpc to stop executing and leave the function loop
 					ticker.Stop()
 					quit = true
-					request := stubs.Request{Ctrl: key}
+					request := stubs.Request{Ctrl: key, ID: "1"}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
+					turn = response.Turn
 					break tickerCtrlLoop
 
 				} else if key == 'p' {
 					//call the control rpc and tell event to pause execution
-					request := stubs.Request{Ctrl: key}
+					request := stubs.Request{Ctrl: key, ID: "1"}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
 					c.events <- StateChange{response.Turn, Paused}
@@ -159,7 +160,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 						keyAgain := <-keyPresses
 						if keyAgain == 'p' {
 							//wait until p is pressed again to continue
-							request := stubs.Request{Ctrl: key}
+							request := stubs.Request{Ctrl: key, ID: "1"}
 							response := new(stubs.Response)
 							client.Call(stubs.Control, request, response)
 							c.events <- StateChange{response.Turn, Executing}
@@ -169,9 +170,10 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 				} else if key == 'k' {
 					//send k and break loop but don't tell to quit
 					ticker.Stop()
-					request := stubs.Request{Ctrl: key}
+					request := stubs.Request{Ctrl: key, ID: "1"}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
+					turn = response.Turn
 					break tickerCtrlLoop
 				}
 			case <-doneChan:
