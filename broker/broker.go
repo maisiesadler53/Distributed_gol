@@ -34,17 +34,17 @@ func (s *Broker) Control(req stubs.Request, res *stubs.Response) (err error) {
 	//send control key to GenerateGameOfLife
 	s.ctrl <- req.Ctrl
 	//receive world from GenerateGameOflife and give to response
-	res.WorldPart = <-s.world
-	res.Turn = <-s.turn
+	res.WorldPart = ClientStates["1"].World
+	res.Turn = ClientStates["1"].Turn
 	return
 }
 
 func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err error) {
 	//tell GameOfLife that ticker has been sent
-	s.tick <- true
+	//s.tick <- true
 	//return from function if the world and turn are received from generateGameOfLife
-	res.WorldPart = <-s.world
-	res.Turn = <-s.turn
+	res.WorldPart = ClientStates["1"].World
+	res.Turn = ClientStates["1"].Turn
 	return
 
 }
@@ -112,22 +112,14 @@ turnLoop:
 		case ctrl := <-s.ctrl:
 			if ctrl == 's' {
 				//if s control send the world and turn to the control function
-				s.world <- world
-				s.turn <- turn
 			} else if ctrl == 'q' {
-				s.world <- world
-				s.turn <- turn
 				//end the process by leaving the loop
 				break turnLoop
 			} else if ctrl == 'p' {
-				//if p send world and wait in loop until p pressed again, then send again
-				s.world <- world
-				s.turn <- turn
+				//wait in loop until p pressed again, then send again
 				for {
 					ctrlAgain := <-s.ctrl
 					if ctrlAgain == 'p' {
-						s.world <- world
-						s.turn <- turn
 						break
 					}
 				}
@@ -137,10 +129,8 @@ turnLoop:
 				for _, client := range clients {
 					client.Call(stubs.Close, request, response)
 				}
-				s.world <- world
-				s.turn <- turn
 				s.closeListener <- true
-				break turnLoop
+				return
 			}
 
 			//if no ticker or ctrl just continue
@@ -180,6 +170,7 @@ turnLoop:
 	//after all turns set the response to be the number of turns and the final world state
 	res.WorldPart = world
 	res.Turn = turn
+	fmt.Println("hi")
 	return
 }
 

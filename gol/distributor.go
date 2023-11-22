@@ -151,7 +151,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
 					c.ioCommand <- 0
-					filename = filename + "x" + strconv.Itoa(response.Turn)
+					filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(response.Turn)
 					c.ioFilename <- filename
 					for i, row := range world {
 						for j := range row {
@@ -189,9 +189,20 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 				} else if key == 'k' {
 					//send k and break loop but don't tell to quit
 					ticker.Stop()
+					ticker2.Stop()
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
+					c.ioCommand <- 0
+					filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(response.Turn)
+					c.ioFilename <- filename
+					for i, row := range world {
+						for j := range row {
+							c.ioOutput <- response.WorldPart[i][j]
+						}
+					}
+					c.events <- ImageOutputComplete{response.Turn, filename}
+					quit = true
 					turn = response.Turn
 					break tickerCtrlLoop
 				}
@@ -221,14 +232,15 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	nextWorld = [][]byte{}
 
 	//send matrix to make pgm
-	// c.ioCommand <- 0
-	// filename = filename + "x" + strconv.Itoa(turn)
-	// c.ioFilename <- filename
-	// for i, row := range world {
-	// 	for j := range row {
-	// 		c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
-	// 	}
-	// }
+	c.ioCommand <- 0
+	filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(turn)
+	c.ioFilename <- filename
+	for i, row := range world {
+		for j := range row {
+			c.ioOutput <- world[i][j]
+		}
+	}
+	c.events <- ImageOutputComplete{turn, filename}
 	c.events <- ImageOutputComplete{turn, filename}
 	//report final state to events
 	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
