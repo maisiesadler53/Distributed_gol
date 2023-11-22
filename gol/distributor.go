@@ -28,7 +28,7 @@ func generateUniqueID() string {
 
 func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, quit chan bool, worldChan chan [][]byte, turn chan int, doneChan chan bool) {
 
-	ID := generateUniqueID()
+	//ID := generateUniqueID()
 	request := stubs.Request{
 		World:  world,
 		Params: params,
@@ -37,7 +37,7 @@ func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Par
 		StartY: startY,
 		EndY:   endY,
 		//if you want the tests to pass set the ID to ID, if you want fault tolerance to work set the ID to be 1
-		ID: ID,
+		ID: "1",
 	}
 	//make response to hold the reply
 	response := new(stubs.Response)
@@ -105,9 +105,10 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 			}
 		}
 	}
+	c.events <- TurnComplete{0}
 
 	//call the generateGameOfLife
-	currentWorld := world
+	currentWorld := append([][]byte{}, world...)
 	turn := 0
 	quitChan := make(chan bool, 1)
 	worldChan := make(chan [][]byte, 1)
@@ -117,7 +118,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 	//listen for key presses or ticks until told to stop by the callGenerateGameOfLife function
 	ticker := time.NewTicker(2 * time.Second)
-	ticker2 := time.NewTicker(250 * time.Millisecond)
+	ticker2 := time.NewTicker(30 * time.Millisecond)
 	go func() {
 		quit := false
 
@@ -135,7 +136,6 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 				request := stubs.Request{}
 				response := new(stubs.Response)
 				client.Call(stubs.AliveCellCount, request, response)
-				c.events <- TurnComplete{response.Turn}
 				newWorld := response.WorldPart
 				for i, row := range currentWorld {
 					for j := range row {
@@ -147,8 +147,8 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 						}
 					}
 				}
-
-				currentWorld = newWorld
+				c.events <- TurnComplete{response.Turn}
+				currentWorld = append([][]byte{}, newWorld...)
 			case key := <-keyPresses:
 				if key == 's' {
 					//call the Control rpc call and produce pgm image from the current world

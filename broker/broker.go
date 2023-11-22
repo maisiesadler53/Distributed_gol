@@ -116,6 +116,13 @@ turnLoop:
 				s.world <- world
 				s.turn <- turn
 			} else if ctrl == 'q' {
+				turnsLeft := req.Params.Turns - turn
+				req.Params.Turns = turnsLeft
+				currentState := stubs.WorldState{
+					World: world,
+					Turn:  turn,
+				}
+				ClientStates[clientID] = currentState
 				s.world <- world
 				s.turn <- turn
 				//end the process by leaving the loop
@@ -170,13 +177,13 @@ turnLoop:
 		nextWorld = [][]byte{}
 
 		//store world and turns left in case disconnect in a request
-		turnsLeft := req.Params.Turns - turn
-		req.Params.Turns = turnsLeft
-		currentState := stubs.WorldState{
-			World: world,
-			Turn:  turn,
-		}
-		ClientStates[clientID] = currentState
+		//turnsLeft := req.Params.Turns - turn
+		//req.Params.Turns = turnsLeft
+		//currentState := stubs.WorldState{
+		//	World: world,
+		//	Turn:  turn,
+		//}
+		//ClientStates[clientID] = currentState
 	}
 	//after all turns set the response to be the number of turns and the final world state
 	res.WorldPart = world
