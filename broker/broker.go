@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net"
 	"net/rpc"
+	"strconv"
 	"time"
 
 	"uk.ac.bris.cs/gameoflife/stubs"
@@ -52,8 +53,8 @@ func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err
 func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
 	clientID := req.ID
 	//make a world to contain the updated state each loop
-	world := [][]byte{}
-	nextWorld := [][]byte{}
+	var world [][]byte
+	var nextWorld [][]byte
 	p := req.Params
 	startTurn := 0
 	turn := 0
@@ -63,8 +64,8 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err
 		world = append([][]byte{}, state.World...)
 		startTurn = state.Turn
 	} else {
-		p = req.Params
 		world = append([][]byte{}, req.World...)
+		nextWorld = [][]byte{}
 	}
 
 	worldParts := make([]chan [][]byte, p.Threads)
@@ -74,7 +75,7 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err
 
 	var servers []string
 	for i := 0; i < p.Threads; i++ {
-		servers = append(servers, "127.0.0.1:8000")
+		servers = append(servers, "127.0.0.1:80"+strconv.Itoa(i)+"0")
 	}
 
 	//establish connection with RPC server and handle errors
@@ -217,7 +218,6 @@ func main() {
 
 	//handles incoming RPC requests until closed
 	go rpc.Accept(listener)
-
 	<-closeListener
 	return
 }

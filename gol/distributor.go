@@ -2,6 +2,7 @@ package gol
 
 import (
 	"fmt"
+	"math/rand"
 	"net/rpc"
 	"strconv"
 	"time"
@@ -21,10 +22,12 @@ type distributorChannels struct {
 
 //call
 func generateUniqueID() string {
-	return fmt.Sprintf("1")
+	rand.Seed(time.Now().UnixNano())
+	return strconv.Itoa(rand.Intn(1000))
 }
 
 func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, quit chan bool, worldChan chan [][]byte, turn chan int, doneChan chan bool) {
+
 	ID := generateUniqueID()
 	request := stubs.Request{
 		World:  world,
@@ -33,7 +36,8 @@ func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Par
 		EndX:   endX,
 		StartY: startY,
 		EndY:   endY,
-		ID:     ID,
+		//if you want the tests to pass set the ID to ID, if you want fault tolerance to work set the ID to be 1
+		ID: ID,
 	}
 	//make response to hold the reply
 	response := new(stubs.Response)
@@ -132,7 +136,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
 					c.ioCommand <- 0
-					filename = filename + "x" + strconv.Itoa(response.Turn)
+					filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(response.Turn)
 					c.ioFilename <- filename
 					for i, row := range world {
 						for j := range row {
@@ -147,6 +151,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
+					turn = response.Turn
 					break tickerCtrlLoop
 
 				} else if key == 'p' {
@@ -172,6 +177,17 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
+					turn = response.Turn
+					c.ioCommand <- 0
+					filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(response.Turn)
+					c.ioFilename <- filename
+					for i, row := range world {
+						for j := range row {
+							c.ioOutput <- response.WorldPart[i][j]
+						}
+					}
+					c.events <- ImageOutputComplete{response.Turn, filename}
+					quit = true
 					break tickerCtrlLoop
 				}
 			case <-doneChan:
@@ -193,21 +209,19 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 		c.events <- StateChange{turn, Quitting}
 		close(c.events)
 	}
-
 	nextWorld = <-worldChan
 	turn = <-turnChan
 	world = append([][]byte{}, nextWorld...)
 	nextWorld = [][]byte{}
-
 	//send matrix to make pgm
-	// c.ioCommand <- 0
-	// filename = filename + "x" + strconv.Itoa(turn)
-	// c.ioFilename <- filename
-	// for i, row := range world {
-	// 	for j := range row {
-	// 		c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
-	// 	}
-	// }
+	c.ioCommand <- 0
+	filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(turn)
+	c.ioFilename <- filename
+	for i, row := range world {
+		for j := range row {
+			c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
+		}
+	}
 	c.events <- ImageOutputComplete{turn, filename}
 	//report final state to events
 	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}
