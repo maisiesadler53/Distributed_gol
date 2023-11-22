@@ -107,6 +107,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	}
 
 	//call the generateGameOfLife
+	currentWorld := world
 	turn := 0
 	quitChan := make(chan bool, 1)
 	worldChan := make(chan [][]byte, 1)
@@ -116,6 +117,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 	//listen for key presses or ticks until told to stop by the callGenerateGameOfLife function
 	ticker := time.NewTicker(2 * time.Second)
+	ticker2 := time.NewTicker(250 * time.Millisecond)
 	go func() {
 		quit := false
 
@@ -129,6 +131,24 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 				client.Call(stubs.AliveCellCount, request, response)
 				newWorld := response.WorldPart
 				c.events <- AliveCellsCount{response.Turn, len(calculateAliveCells(p, newWorld))}
+			case <-ticker2.C:
+				request := stubs.Request{}
+				response := new(stubs.Response)
+				client.Call(stubs.AliveCellCount, request, response)
+				c.events <- TurnComplete{response.Turn}
+				newWorld := response.WorldPart
+				for i, row := range currentWorld {
+					for j := range row {
+						if currentWorld[i][j] != newWorld[i][j] {
+							c.events <- CellFlipped{
+								CompletedTurns: response.Turn,
+								Cell:           util.Cell{X: j, Y: i},
+							}
+						}
+					}
+				}
+
+				currentWorld = newWorld
 			case key := <-keyPresses:
 				if key == 's' {
 					//call the Control rpc call and produce pgm image from the current world
@@ -144,6 +164,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 						}
 					}
 					c.events <- ImageOutputComplete{response.Turn, filename}
+
 				} else if key == 'q' {
 					//tell the rpc to stop executing and leave the function loop
 					ticker.Stop()
