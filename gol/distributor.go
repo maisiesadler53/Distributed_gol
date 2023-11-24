@@ -2,6 +2,7 @@ package gol
 
 import (
 	"fmt"
+	"math/rand"
 	"net/rpc"
 	"strconv"
 	"time"
@@ -19,7 +20,15 @@ type distributorChannels struct {
 	ioInput    <-chan uint8
 }
 
+//call
+func generateUniqueID() string {
+	rand.Seed(time.Now().UnixNano())
+	return strconv.Itoa(rand.Intn(1000))
+}
+
 func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, quit chan bool, worldChan chan [][]byte, turn chan int, doneChan chan bool) {
+
+	//ID := generateUniqueID()
 	request := stubs.Request{
 		World:  world,
 		Params: params,
@@ -27,7 +36,8 @@ func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Par
 		EndX:   endX,
 		StartY: startY,
 		EndY:   endY,
-		ID:     "1",
+		//if you want the tests to pass set the ID to ID, if you want fault tolerance to work set the ID to be 1
+		ID: "1",
 	}
 	//make response to hold the reply
 	response := new(stubs.Response)
@@ -99,7 +109,6 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 	//call the generateGameOfLife
 	currentWorld := append([][]byte{}, world...)
-	//call the generateGameOfLife
 	turn := 0
 	quitChan := make(chan bool, 1)
 	worldChan := make(chan [][]byte, 1)
@@ -155,6 +164,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 						}
 					}
 					c.events <- ImageOutputComplete{response.Turn, filename}
+
 				} else if key == 'q' {
 					//tell the rpc to stop executing and leave the function loop
 					ticker.Stop()
@@ -220,13 +230,11 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 		c.events <- StateChange{turn, Quitting}
 		close(c.events)
 	}
-
-	world = <-worldChan
+	nextWorld = <-worldChan
 	turn = <-turnChan
 	world = append([][]byte{}, nextWorld...)
 	nextWorld = [][]byte{}
-
-	//snd matrix to make pgm
+	//send matrix to make pgm
 	c.ioCommand <- 0
 	filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(turn)
 	c.ioFilename <- filename

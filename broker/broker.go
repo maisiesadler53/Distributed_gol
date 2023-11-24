@@ -35,7 +35,6 @@ func (s *Broker) Control(req stubs.Request, res *stubs.Response) (err error) {
 	//send control key to GenerateGameOfLife
 	s.ctrl <- req.Ctrl
 	//receive world from GenerateGameOflife and give to response
-
 	res.WorldPart = <-s.world
 	res.Turn = <-s.turn
 	return
@@ -175,10 +174,10 @@ turnLoop:
 				fmt.Println(i*p.ImageHeight/p.Threads, ";", (i+1)*p.ImageHeight/p.Threads+2, ";middle")
 			}
 			req := stubs.Request{
-				World:  append([][]byte{}, haloWorld...),
+				World:  world,
 				Params: p,
-				StartX: 1,
-				EndX:   p.ImageHeight/p.Threads + 1,
+				StartX: i * p.ImageHeight / p.Threads,
+				EndX:   (i + 1) * p.ImageHeight / p.Threads,
 				StartY: 0,
 				EndY:   p.ImageWidth,
 			}
@@ -194,6 +193,14 @@ turnLoop:
 		world = append([][]byte{}, nextWorld...)
 		nextWorld = [][]byte{}
 
+		//store world and turns left in case disconnect in a request
+		//turnsLeft := req.Params.Turns - turn
+		//req.Params.Turns = turnsLeft
+		//currentState := stubs.WorldState{
+		//	World: world,
+		//	Turn:  turn,
+		//}
+		//ClientStates[clientID] = currentState
 	}
 	//after all turns set the response to be the number of turns and the final world state
 	res.WorldPart = world
@@ -235,7 +242,6 @@ func main() {
 
 	//handles incoming RPC requests until closed
 	go rpc.Accept(listener)
-
 	<-closeListener
 	return
 }
