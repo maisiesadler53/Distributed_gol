@@ -23,12 +23,12 @@ func (s *Worker) Close(req stubs.Request, res *stubs.Response) (err error) {
 func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error) {
 	// p := req.Params
 	world := append([][]byte{}, req.World...)
-	startX := req.StartX
-	startY := req.StartY
-	endY := req.EndY
-	endX := req.EndX
-	width := endY - startY
-	height := endX - startX
+	startX := req.StartX    // = 1
+	startY := req.StartY    // = 0
+	endY := req.EndY        // = p.imageWidth
+	endX := req.EndX        // = p.ImageHeight/p.Threads + 1
+	width := endY - startY  // = p.imageWidth
+	height := endX - startX // = p.ImageHeigth
 	nextWorldPart := make([][]byte, height)
 	for i := range nextWorldPart {
 		nextWorldPart[i] = make([]byte, width)
@@ -40,8 +40,7 @@ func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error
 			for _, n1 := range adj {
 				for _, n2 := range adj {
 					if n1 == 0 && n2 == 0 {
-					} else if world[(i + n1)][(j+n2+height)%height] == 255 {
-						fmt.Println((i + n1), ";", (j+n2+height)%height)
+					} else if world[i+n1][(j+n2+width)%width] == 255 {
 						sum++
 					}
 				}
@@ -63,7 +62,7 @@ func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error
 }
 
 func main() {
-	pAddr := flag.String("port", "8000", "Port to listen on")
+	pAddr := flag.String("port", "8020", "Port to listen on")
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 	closeListener := make(chan bool, 1)

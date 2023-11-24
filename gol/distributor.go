@@ -84,7 +84,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 	//create slice to store world
 	world := make([][]byte, p.ImageWidth)
-	nextWorld := [][]byte{}
+	//nextWorld := [][]byte{}
 	for i := range world {
 		world[i] = make([]byte, p.ImageHeight)
 	}
@@ -196,10 +196,10 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 		close(c.events)
 	}
 
-	nextWorld = <-worldChan
+	world = <-worldChan
 	turn = <-turnChan
-	world = append([][]byte{}, nextWorld...)
-	nextWorld = [][]byte{}
+	// world = append([][]byte{}, nextWorld...)
+	// nextWorld = [][]byte{}
 
 	//send matrix to make pgm
 	// c.ioCommand <- 0

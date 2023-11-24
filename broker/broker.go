@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net"
 	"net/rpc"
+	"strconv"
 	"time"
 
 	"uk.ac.bris.cs/gameoflife/stubs"
@@ -34,9 +35,12 @@ func (s *Broker) Control(req stubs.Request, res *stubs.Response) (err error) {
 	//send control key to GenerateGameOfLife
 	s.ctrl <- req.Ctrl
 	//receive world from GenerateGameOflife and give to response
-	fmt.Println(ClientStates[req.ID].Turn)
-	res.WorldPart = ClientStates[req.ID].World
-	res.Turn = ClientStates[req.ID].Turn
+	// fmt.Println(ClientStates[req.ID].Turn)
+	// res.WorldPart = ClientStates[req.ID].World
+	// res.Turn = ClientStates[req.ID].Turn
+
+	res.WorldPart = <-s.world
+	res.Turn = <-s.turn
 	return
 }
 
@@ -51,22 +55,24 @@ func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err
 }
 
 func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
-	clientID := req.ID
+	// clientID := req.ID
 	//make a world to contain the updated state each loop
-	world := [][]byte{}
+	var world [][]byte
 	nextWorld := [][]byte{}
 	p := req.Params
 	startTurn := 0
 	turn := 0
 
 	//if client previously connected (ID recognised) then use the state last saved for the client
-	if state, exists := ClientStates[clientID]; exists {
-		world = append([][]byte{}, state.World...)
-		startTurn = state.Turn
-	} else {
-		p = req.Params
-		world = append([][]byte{}, req.World...)
-	}
+	// if state, exists := ClientStates[clientID]; exists {
+	// 	world = append([][]byte{}, state.World...)
+	// 	startTurn = state.Turn
+	// } else {
+	// 	p = req.Params
+	// 	world = append([][]byte{}, req.World...)
+
+	// }
+	world = append([][]byte{}, req.World...)
 
 	worldParts := make([]chan [][]byte, p.Threads)
 	for i := range worldParts {
@@ -75,7 +81,7 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err
 
 	var servers []string
 	for i := 0; i < p.Threads; i++ {
-		servers = append(servers, "127.0.0.1:8000")
+		servers = append(servers, "127.0.0.1:80"+strconv.Itoa(i)+"0")
 	}
 
 	//establish connection with RPC server and handle errors
@@ -113,22 +119,22 @@ turnLoop:
 		case ctrl := <-s.ctrl:
 			if ctrl == 's' {
 				//if s control send the world and turn to the control function
-				//s.world <- world
-				//s.turn <- turn
+				s.world <- world
+				s.turn <- turn
 			} else if ctrl == 'q' {
-				//s.world <- world
-				//s.turn <- turn
+				s.world <- world
+				s.turn <- turn
 				//end the process by leaving the loop
 				break turnLoop
 			} else if ctrl == 'p' {
 				//if p send world and wait in loop until p pressed again, then send again
-				//s.world <- world
-				//s.turn <- turn
+				s.world <- world
+				s.turn <- turn
 				for {
 					ctrlAgain := <-s.ctrl
 					if ctrlAgain == 'p' {
-						//s.world <- world
-						//s.turn <- turn
+						s.world <- world
+						s.turn <- turn
 						break
 					}
 				}
@@ -138,8 +144,8 @@ turnLoop:
 				for _, client := range clients {
 					client.Call(stubs.Close, request, response)
 				}
-				//s.world <- world
-				//s.turn <- turn
+				s.world <- world
+				s.turn <- turn
 				s.closeListener <- true
 				break turnLoop
 			}
@@ -149,16 +155,25 @@ turnLoop:
 		}
 		//loop through the positions in the world and add up the number or surrounding live cells
 		for i := 0; i < p.Threads; i++ {
-			var haloWorld [][]byte
+			haloWorld := [][]byte{}
 			if i == 0 {
-				haloWorld = append(append([][]byte{}, world[p.ImageHeight-1]), append([][]byte{}, world[0:((i+1)*p.ImageHeight/p.Threads+1)]...)...)
-			} else if i == p.Threads-1 {
-				haloWorld = append(world[(i*p.ImageHeight/p.Threads-1):p.ImageHeight], world[0])
+				if p.Threads == 1 {
+					haloWorld = append([][]byte{}, world[p.ImageHeight-1])
+					haloWorld = append(haloWorld, world...)
+					haloWorld = append(haloWorld, world[0])
+				} else {
+					haloWorld = append([][]byte{world[p.ImageHeight-1]}, world[:(i+1)*p.ImageHeight/p.Threads+2]...)
+					fmt.Println(p.ImageHeight-1, ";", (i+1)*p.ImageHeight/p.Threads+2, ":first")
+				}
+			} else if i == (p.Threads - 1) {
+				haloWorld = append(world[i*p.ImageHeight/p.Threads-1:], world[0])
+				fmt.Println(i*p.ImageHeight/p.Threads, "; last")
 			} else {
-				haloWorld = world[(i*p.ImageHeight/p.Threads - 1):((i+1)*p.ImageHeight/p.Threads + 1)]
+				haloWorld = world[i*p.ImageHeight/p.Threads-1 : (i+1)*p.ImageHeight/p.Threads+2]
+				fmt.Println(i*p.ImageHeight/p.Threads, ";", (i+1)*p.ImageHeight/p.Threads+2, ";middle")
 			}
 			req := stubs.Request{
-				World:  haloWorld,
+				World:  append([][]byte{}, haloWorld...),
 				Params: p,
 				StartX: 1,
 				EndX:   p.ImageHeight/p.Threads + 1,
@@ -178,11 +193,11 @@ turnLoop:
 		nextWorld = [][]byte{}
 
 		//store world and turns left in case disconnect in a request
-		currentState := stubs.WorldState{
-			World: world,
-			Turn:  turn,
-		}
-		ClientStates[clientID] = currentState
+		// currentState := stubs.WorldState{
+		// 	World: world,
+		// 	Turn:  turn,
+		// }
+		// ClientStates[clientID] = currentState
 	}
 	//after all turns set the response to be the number of turns and the final world state
 	res.WorldPart = world
