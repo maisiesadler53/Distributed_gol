@@ -19,13 +19,7 @@ type distributorChannels struct {
 	ioInput    <-chan uint8
 }
 
-//call
-func generateUniqueID() string {
-	return fmt.Sprintf("1")
-}
-
 func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, quit chan bool, worldChan chan [][]byte, turn chan int, doneChan chan bool) {
-	ID := generateUniqueID()
 	request := stubs.Request{
 		World:  world,
 		Params: params,
@@ -33,7 +27,7 @@ func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Par
 		EndX:   endX,
 		StartY: startY,
 		EndY:   endY,
-		ID:     ID,
+		ID:     "1",
 	}
 	//make response to hold the reply
 	response := new(stubs.Response)
@@ -84,7 +78,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 	//create slice to store world
 	world := make([][]byte, p.ImageWidth)
-	//nextWorld := [][]byte{}
+	nextWorld := [][]byte{}
 	for i := range world {
 		world[i] = make([]byte, p.ImageHeight)
 	}
@@ -101,7 +95,10 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 			}
 		}
 	}
+	c.events <- TurnComplete{0}
 
+	//call the generateGameOfLife
+	currentWorld := append([][]byte{}, world...)
 	//call the generateGameOfLife
 	turn := 0
 	quitChan := make(chan bool, 1)
@@ -112,6 +109,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 	//listen for key presses or ticks until told to stop by the callGenerateGameOfLife function
 	ticker := time.NewTicker(2 * time.Second)
+	ticker2 := time.NewTicker(30 * time.Millisecond)
 	go func() {
 		quit := false
 
@@ -120,19 +118,36 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 			select {
 			case <-ticker.C:
 				//call AliceCellCount every tick, receive world and send to alivecell event
-				request := stubs.Request{ID: "1"}
+				request := stubs.Request{}
 				response := new(stubs.Response)
 				client.Call(stubs.AliveCellCount, request, response)
 				newWorld := response.WorldPart
 				c.events <- AliveCellsCount{response.Turn, len(calculateAliveCells(p, newWorld))}
+			case <-ticker2.C:
+				request := stubs.Request{}
+				response := new(stubs.Response)
+				client.Call(stubs.AliveCellCount, request, response)
+				newWorld := response.WorldPart
+				for i, row := range currentWorld {
+					for j := range row {
+						if currentWorld[i][j] != newWorld[i][j] {
+							c.events <- CellFlipped{
+								CompletedTurns: response.Turn,
+								Cell:           util.Cell{X: j, Y: i},
+							}
+						}
+					}
+				}
+				c.events <- TurnComplete{response.Turn}
+				currentWorld = append([][]byte{}, newWorld...)
 			case key := <-keyPresses:
 				if key == 's' {
 					//call the Control rpc call and produce pgm image from the current world
-					request := stubs.Request{Ctrl: key, ID: "1"}
+					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
 					c.ioCommand <- 0
-					filename = filename + "x" + strconv.Itoa(response.Turn)
+					filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(response.Turn)
 					c.ioFilename <- filename
 					for i, row := range world {
 						for j := range row {
@@ -144,7 +159,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					//tell the rpc to stop executing and leave the function loop
 					ticker.Stop()
 					quit = true
-					request := stubs.Request{Ctrl: key, ID: "1"}
+					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
 					turn = response.Turn
@@ -152,7 +167,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 				} else if key == 'p' {
 					//call the control rpc and tell event to pause execution
-					request := stubs.Request{Ctrl: key, ID: "1"}
+					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
 					c.events <- StateChange{response.Turn, Paused}
@@ -160,7 +175,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 						keyAgain := <-keyPresses
 						if keyAgain == 'p' {
 							//wait until p is pressed again to continue
-							request := stubs.Request{Ctrl: key, ID: "1"}
+							request := stubs.Request{Ctrl: key}
 							response := new(stubs.Response)
 							client.Call(stubs.Control, request, response)
 							c.events <- StateChange{response.Turn, Executing}
@@ -170,10 +185,20 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 				} else if key == 'k' {
 					//send k and break loop but don't tell to quit
 					ticker.Stop()
-					request := stubs.Request{Ctrl: key, ID: "1"}
+					request := stubs.Request{Ctrl: key}
 					response := new(stubs.Response)
 					client.Call(stubs.Control, request, response)
 					turn = response.Turn
+					c.ioCommand <- 0
+					filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(response.Turn)
+					c.ioFilename <- filename
+					for i, row := range world {
+						for j := range row {
+							c.ioOutput <- response.WorldPart[i][j]
+						}
+					}
+					c.events <- ImageOutputComplete{response.Turn, filename}
+					quit = true
 					break tickerCtrlLoop
 				}
 			case <-doneChan:
@@ -198,18 +223,18 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 	world = <-worldChan
 	turn = <-turnChan
-	// world = append([][]byte{}, nextWorld...)
-	// nextWorld = [][]byte{}
+	world = append([][]byte{}, nextWorld...)
+	nextWorld = [][]byte{}
 
-	//send matrix to make pgm
-	// c.ioCommand <- 0
-	// filename = filename + "x" + strconv.Itoa(turn)
-	// c.ioFilename <- filename
-	// for i, row := range world {
-	// 	for j := range row {
-	// 		c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
-	// 	}
-	// }
+	//snd matrix to make pgm
+	c.ioCommand <- 0
+	filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(turn)
+	c.ioFilename <- filename
+	for i, row := range world {
+		for j := range row {
+			c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
+		}
+	}
 	c.events <- ImageOutputComplete{turn, filename}
 	//report final state to events
 	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}

@@ -35,9 +35,6 @@ func (s *Broker) Control(req stubs.Request, res *stubs.Response) (err error) {
 	//send control key to GenerateGameOfLife
 	s.ctrl <- req.Ctrl
 	//receive world from GenerateGameOflife and give to response
-	// fmt.Println(ClientStates[req.ID].Turn)
-	// res.WorldPart = ClientStates[req.ID].World
-	// res.Turn = ClientStates[req.ID].Turn
 
 	res.WorldPart = <-s.world
 	res.Turn = <-s.turn
@@ -55,24 +52,22 @@ func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err
 }
 
 func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
-	// clientID := req.ID
+	clientID := req.ID
 	//make a world to contain the updated state each loop
 	var world [][]byte
-	nextWorld := [][]byte{}
+	var nextWorld [][]byte
 	p := req.Params
 	startTurn := 0
 	turn := 0
 
 	//if client previously connected (ID recognised) then use the state last saved for the client
-	// if state, exists := ClientStates[clientID]; exists {
-	// 	world = append([][]byte{}, state.World...)
-	// 	startTurn = state.Turn
-	// } else {
-	// 	p = req.Params
-	// 	world = append([][]byte{}, req.World...)
-
-	// }
-	world = append([][]byte{}, req.World...)
+	if state, exists := ClientStates[clientID]; exists {
+		world = append([][]byte{}, state.World...)
+		startTurn = state.Turn
+	} else {
+		world = append([][]byte{}, req.World...)
+		nextWorld = [][]byte{}
+	}
 
 	worldParts := make([]chan [][]byte, p.Threads)
 	for i := range worldParts {
@@ -122,6 +117,13 @@ turnLoop:
 				s.world <- world
 				s.turn <- turn
 			} else if ctrl == 'q' {
+				turnsLeft := req.Params.Turns - turn
+				req.Params.Turns = turnsLeft
+				currentState := stubs.WorldState{
+					World: world,
+					Turn:  turn,
+				}
+				ClientStates[clientID] = currentState
 				s.world <- world
 				s.turn <- turn
 				//end the process by leaving the loop
@@ -192,12 +194,6 @@ turnLoop:
 		world = append([][]byte{}, nextWorld...)
 		nextWorld = [][]byte{}
 
-		//store world and turns left in case disconnect in a request
-		// currentState := stubs.WorldState{
-		// 	World: world,
-		// 	Turn:  turn,
-		// }
-		// ClientStates[clientID] = currentState
 	}
 	//after all turns set the response to be the number of turns and the final world state
 	res.WorldPart = world
