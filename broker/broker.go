@@ -167,17 +167,19 @@ turnLoop:
 					fmt.Println(p.ImageHeight-1, ";", (i+1)*p.ImageHeight/p.Threads+2, ":first")
 				}
 			} else if i == (p.Threads - 1) {
-				haloWorld = append(world[i*p.ImageHeight/p.Threads-1:], world[0])
+				haloWorld = append(world[i*p.ImageHeight/p.Threads:], world[0])
 				fmt.Println(i*p.ImageHeight/p.Threads, "; last")
 			} else {
-				haloWorld = world[i*p.ImageHeight/p.Threads-1 : (i+1)*p.ImageHeight/p.Threads+2]
+				haloWorld = world[i*p.ImageHeight/p.Threads : (i+1)*p.ImageHeight/p.Threads+2]
 				fmt.Println(i*p.ImageHeight/p.Threads, ";", (i+1)*p.ImageHeight/p.Threads+2, ";middle")
 			}
+			fmt.Println(p.ImageHeight/p.Threads + 1)
+			fmt.Println(len(haloWorld) - 2)
 			req := stubs.Request{
-				World:  world,
+				World:  haloWorld,
 				Params: p,
 				StartX: 1,
-				EndX:   p.ImageHeight/p.Threads + 1,
+				EndX:   len(haloWorld) - 1,
 				StartY: 0,
 				EndY:   p.ImageWidth,
 			}

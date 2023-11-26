@@ -26,7 +26,7 @@ func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error
 	startX := req.StartX    // = 1
 	startY := req.StartY    // = 0
 	endY := req.EndY        // = p.imageWidth
-	endX := req.EndX        // = p.ImageHeight/p.Threads + 1
+	endX := req.EndX        // = len(haloWorld) - 2
 	width := endY - startY  // = p.imageWidth
 	height := endX - startX // = p.ImageHeigth
 	nextWorldPart := make([][]byte, height)
@@ -56,6 +56,7 @@ func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error
 			}
 		}
 	}
+	fmt.Println(len(nextWorldPart))
 	res.WorldPart = append([][]byte{}, nextWorldPart...)
 
 	return
