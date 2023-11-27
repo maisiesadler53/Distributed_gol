@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net"
 	"net/rpc"
-	"strconv"
 	"time"
 
 	"uk.ac.bris.cs/gameoflife/stubs"
@@ -38,7 +37,7 @@ func (s *Broker) Control(req stubs.Request, res *stubs.Response) (err error) {
 	return
 }
 
-func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err error) {
+func (s *Broker) AliveCellCount(req stubs.Request, res *stubs.Response) (err error) {
 	//tell GameOfLife that ticker has been sent
 	s.tick <- true
 	//return from function if the world and turn are received from generateGameOfLife
@@ -51,10 +50,12 @@ func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err
 func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
 	fmt.Println("connected")
 	var servers []string
-	for i := 0; i < req.Params.Threads; i++ {
-		servers = append(servers, "127.0.0.1:80"+strconv.Itoa(i)+"0")
-	}
 
+	servers = append(servers, "52.87.222.194:8000")
+	servers = append(servers, "52.204.81.92:8000")
+	//servers = append(servers, "54.237.111.50:8000")
+	//servers = append(servers, "100.26.236.219:8000")
+	//servers = append(servers, "54.144.133.91:8000")
 	//establish connection with RPC server and handle errors
 	var clients []*rpc.Client
 	for _, server := range servers {
@@ -62,17 +63,11 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err
 		clients = append(clients, client)
 		if error != nil {
 			// Handle the error, e.g., log it or return
-			fmt.Println("Error connecting to RPC server:", err)
+			fmt.Println("Error connecting to RPC server:", server, err)
 			return
 		}
 	}
-	// client, err := rpc.Dial("tcp", server)
-	// if err != nil {
-	// 	// Handle the error, e.g., log it or return
-	// 	fmt.Println("Error connecting to RPC server:", err)
-	// 	return
-	// }
-
+	fmt.Println("connected")
 	//close connection when distributer ends
 
 	for _, client := range clients {
@@ -87,9 +82,9 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err
 
 	p := req.Params
 	turn := 0
-
+	p.Threads = 2
 	//make a world to contain the updated state each loop
-	world := append([][]byte{}, req.World...)
+	world := req.World
 	nextWorld := [][]byte{}
 
 	worldParts := make([]chan [][]byte, p.Threads)
@@ -98,58 +93,65 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err
 	}
 
 	//loop through each turn and update state
-turnLoop:
+	//turnLoop:
 	for turn = 0; turn < p.Turns; turn++ {
 		//check if a key has been pressed or ticker
-		select {
-		//if ticker received send world and turn
-		case <-s.tick:
-			s.world <- world
-			s.turn <- turn
-		case ctrl := <-s.ctrl:
-			if ctrl == 's' {
-				//if s control send the world and turn to the control function
-				s.world <- world
-				s.turn <- turn
-			} else if ctrl == 'q' {
-				s.world <- world
-				s.turn <- turn
-				//end the process by leaving the loop
-				break turnLoop
-			} else if ctrl == 'p' {
-				//if p send world and wait in loop until p pressed again, then send again
-				s.world <- world
-				s.turn <- turn
-				for {
-					ctrlAgain := <-s.ctrl
-					if ctrlAgain == 'p' {
-						s.world <- world
-						s.turn <- turn
-						break
-					}
-				}
-			} else if ctrl == 'k' {
-				request := stubs.Request{}
-				response := new(stubs.Response)
-				for _, client := range clients {
-					client.Call(stubs.Close, request, response)
-				}
-				s.world <- world
-				s.turn <- turn
-				s.closeListener <- true
-				break turnLoop
-			}
-
-			//if no ticker or ctrl just continue
-		default:
-		}
+		//select {
+		////if ticker received send world and turn
+		//case <-s.tick:
+		//	s.world <- world
+		//	s.turn <- turn
+		//case ctrl := <-s.ctrl:
+		//	if ctrl == 's' {
+		//		//if s control send the world and turn to the control function
+		//		s.world <- world
+		//		s.turn <- turn
+		//	} else if ctrl == 'q' {
+		//		s.world <- world
+		//		s.turn <- turn
+		//		//end the process by leaving the loop
+		//		break turnLoop
+		//	} else if ctrl == 'p' {
+		//		//if p send world and wait in loop until p pressed again, then send again
+		//		s.world <- world
+		//		s.turn <- turn
+		//		for {
+		//			ctrlAgain := <-s.ctrl
+		//			if ctrlAgain == 'p' {
+		//				s.world <- world
+		//				s.turn <- turn
+		//				break
+		//			}
+		//		}
+		//	} else if ctrl == 'k' {
+		//		request := stubs.Request{}
+		//		response := new(stubs.Response)
+		//		for _, client := range clients {
+		//			client.Call(stubs.Close, request, response)
+		//		}
+		//		s.world <- world
+		//		s.turn <- turn
+		//		s.closeListener <- true
+		//		break turnLoop
+		//	}
+		//
+		//	//if no ticker or ctrl just continue
+		//default:
+		//}
 		//loop through the positions in the world and add up the number or surrounding live cells
 		for i := 0; i < p.Threads; i++ {
+			haloWorld := [][]byte{}
+
+			haloWorld = append([][]byte{}, world[p.ImageHeight-1])
+			haloWorld = append(haloWorld, world...)
+			haloWorld = append(haloWorld, world[0])
+			haloWorld = haloWorld[i*p.ImageHeight/p.Threads : (i+1)*p.ImageHeight/p.Threads+2]
+
 			req := stubs.Request{
-				World:  world,
+				World:  haloWorld,
 				Params: p,
-				StartX: i * p.ImageHeight / p.Threads,
-				EndX:   (i + 1) * p.ImageHeight / p.Threads,
+				StartX: 1,
+				EndX:   len(haloWorld) - 1,
 				StartY: 0,
 				EndY:   p.ImageWidth,
 			}
@@ -157,12 +159,17 @@ turnLoop:
 			go callWorker(clients[i], req, res, worldParts[i]) // every part goes to 1 worldPart channel
 		}
 
+		fmt.Println("about to append")
 		for i := 0; i < p.Threads; i++ {
+			fmt.Println("waiting for part")
 			part := <-worldParts[i]
+			fmt.Println("received part")
 			nextWorld = append(nextWorld, part...)
 		}
+
+		fmt.Println("appended")
 		//set the world to the nextWorld and reset the nextWorld
-		world = append([][]byte{}, nextWorld...)
+		world = nextWorld
 		nextWorld = [][]byte{}
 	}
 	//after all turns set the response to be the number of turns and the final world state

@@ -21,17 +21,18 @@ func (s *Worker) Close(req stubs.Request, res *stubs.Response) (err error) {
 }
 
 func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error) {
-	p := req.Params
+	// p := req.Params
+	fmt.Println("start")
 	world := append([][]byte{}, req.World...)
-	startX := req.StartX
-	startY := req.StartY
-	endY := req.EndY
-	endX := req.EndX
-	height := endY - startY
-	width := endX - startX
-	nextWorldPart := make([][]byte, width)
+	startX := req.StartX    // = 1
+	startY := req.StartY    // = 0
+	endY := req.EndY        // = p.imageWidth
+	endX := req.EndX        // = len(haloWorld) - 2
+	width := endY - startY  // = p.imageWidth
+	height := endX - startX // = p.ImageHeigth
+	nextWorldPart := make([][]byte, height)
 	for i := range nextWorldPart {
-		nextWorldPart[i] = make([]byte, height)
+		nextWorldPart[i] = make([]byte, width)
 	}
 	for i := startX; i < endX; i++ {
 		for j := startY; j < endY; j++ {
@@ -40,7 +41,7 @@ func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error
 			for _, n1 := range adj {
 				for _, n2 := range adj {
 					if n1 == 0 && n2 == 0 {
-					} else if world[(i+n1+p.ImageWidth)%p.ImageWidth][(j+n2+p.ImageHeight)%p.ImageHeight] == 255 {
+					} else if world[i+n1][(j+n2+width)%width] == 255 {
 						sum++
 					}
 				}
@@ -56,7 +57,9 @@ func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error
 			}
 		}
 	}
+	fmt.Println("done")
 	res.WorldPart = append([][]byte{}, nextWorldPart...)
+
 	return
 }
 
@@ -92,3 +95,5 @@ func main() {
 	time.Sleep(2 * time.Second)
 	return
 }
+
+// Handle incoming RPC requests until closed

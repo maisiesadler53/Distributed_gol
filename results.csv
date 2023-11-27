@@ -1,0 +1,11 @@
+goos: linux
+goarch: amd64
+pkg: uk.ac.bris.cs/gameoflife
+cpu: 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
+,bench.out
+,sec/op,CI
+Gol/512x512x10-1-8,5.716404068,∞
+Gol/512x512x10-2-8,25.12537568,∞
+Gol/512x512x10-3-8,18.606040922000002,∞
+Gol/512x512x10-4-8,16.226681911,∞
+geomean,14.430447349483302

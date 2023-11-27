@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/rpc"
 	"strconv"
-	"time"
-
 	"uk.ac.bris.cs/gameoflife/stubs"
 	"uk.ac.bris.cs/gameoflife/util"
 )
@@ -98,95 +96,95 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 
 	//call the generateGameOfLife
 	turn := 0
-	quitChan := make(chan bool, 1)
+	//quitChan := make(chan bool, 1)
 	worldChan := make(chan [][]byte, 1)
 	turnChan := make(chan int, 1)
 	doneChan := make(chan bool, 1)
 	go callGenerateGameOfLife(client, world, stubs.Params{Turns: p.Turns, Threads: p.Threads, ImageWidth: p.ImageHeight, ImageHeight: p.ImageWidth}, 0, p.ImageWidth, 0, p.ImageHeight, doneChan, worldChan, turnChan, doneChan)
 
 	//listen for key presses or ticks until told to stop by the callGenerateGameOfLife function
-	ticker := time.NewTicker(2 * time.Second)
-	go func() {
-		quit := false
-
-	tickerCtrlLoop:
-		for {
-			select {
-			case <-ticker.C:
-				//call AliceCellCount every tick, receive world and send to alivecell event
-				request := stubs.Request{}
-				response := new(stubs.Response)
-				client.Call(stubs.AliveCellCount, request, response)
-				newWorld := response.WorldPart
-				c.events <- AliveCellsCount{response.Turn, len(calculateAliveCells(p, newWorld))}
-			case key := <-keyPresses:
-				if key == 's' {
-					//call the Control rpc call and produce pgm image from the current world
-					request := stubs.Request{Ctrl: key}
-					response := new(stubs.Response)
-					client.Call(stubs.Control, request, response)
-					c.ioCommand <- 0
-					filename = filename + "x" + strconv.Itoa(response.Turn)
-					c.ioFilename <- filename
-					for i, row := range world {
-						for j := range row {
-							c.ioOutput <- response.WorldPart[i][j]
-						}
-					}
-					c.events <- ImageOutputComplete{response.Turn, filename}
-				} else if key == 'q' {
-					//tell the rpc to stop executing and leave the function loop
-					ticker.Stop()
-					quit = true
-					request := stubs.Request{Ctrl: key}
-					response := new(stubs.Response)
-					client.Call(stubs.Control, request, response)
-					break tickerCtrlLoop
-
-				} else if key == 'p' {
-					//call the control rpc and tell event to pause execution
-					request := stubs.Request{Ctrl: key}
-					response := new(stubs.Response)
-					client.Call(stubs.Control, request, response)
-					c.events <- StateChange{response.Turn, Paused}
-					for {
-						keyAgain := <-keyPresses
-						if keyAgain == 'p' {
-							//wait until p is pressed again to continue
-							request := stubs.Request{Ctrl: key}
-							response := new(stubs.Response)
-							client.Call(stubs.Control, request, response)
-							c.events <- StateChange{response.Turn, Executing}
-							break
-						}
-					}
-				} else if key == 'k' {
-					//send k and break loop but don't tell to quit
-					ticker.Stop()
-					request := stubs.Request{Ctrl: key}
-					response := new(stubs.Response)
-					client.Call(stubs.Control, request, response)
-					break tickerCtrlLoop
-				}
-			case <-doneChan:
-				break tickerCtrlLoop
-				//if the GenerateGameOfLife call ends then leave the loop
-			default: // If no ticker or control continue
-			}
-		}
-		quitChan <- quit
-		return
-	}()
-	// receive the new world and number of turns from the generateGameOfLife call and put in a new
-	quit := <-quitChan
-	if quit {
-		<-worldChan
-		<-turnChan
-		c.ioCommand <- ioCheckIdle
-		<-c.ioIdle
-		c.events <- StateChange{turn, Quitting}
-		close(c.events)
-	}
+	//ticker := time.NewTicker(2 * time.Second)
+	//go func() {
+	//	quit := false
+	//
+	//tickerCtrlLoop:
+	//	for {
+	//		select {
+	//		case <-ticker.C:
+	//			//call AliceCellCount every tick, receive world and send to alivecell event
+	//			request := stubs.Request{}
+	//			response := new(stubs.Response)
+	//			client.Call(stubs.AliveCellCount, request, response)
+	//			newWorld := response.WorldPart
+	//			c.events <- AliveCellsCount{response.Turn, len(calculateAliveCells(p, newWorld))}
+	//		case key := <-keyPresses:
+	//			if key == 's' {
+	//				//call the Control rpc call and produce pgm image from the current world
+	//				request := stubs.Request{Ctrl: key}
+	//				response := new(stubs.Response)
+	//				client.Call(stubs.Control, request, response)
+	//				c.ioCommand <- 0
+	//				filename = filename + "x" + strconv.Itoa(response.Turn)
+	//				c.ioFilename <- filename
+	//				for i, row := range world {
+	//					for j := range row {
+	//						c.ioOutput <- response.WorldPart[i][j]
+	//					}
+	//				}
+	//				c.events <- ImageOutputComplete{response.Turn, filename}
+	//			} else if key == 'q' {
+	//				//tell the rpc to stop executing and leave the function loop
+	//				ticker.Stop()
+	//				quit = true
+	//				request := stubs.Request{Ctrl: key}
+	//				response := new(stubs.Response)
+	//				client.Call(stubs.Control, request, response)
+	//				break tickerCtrlLoop
+	//
+	//			} else if key == 'p' {
+	//				//call the control rpc and tell event to pause execution
+	//				request := stubs.Request{Ctrl: key}
+	//				response := new(stubs.Response)
+	//				client.Call(stubs.Control, request, response)
+	//				c.events <- StateChange{response.Turn, Paused}
+	//				for {
+	//					keyAgain := <-keyPresses
+	//					if keyAgain == 'p' {
+	//						//wait until p is pressed again to continue
+	//						request := stubs.Request{Ctrl: key}
+	//						response := new(stubs.Response)
+	//						client.Call(stubs.Control, request, response)
+	//						c.events <- StateChange{response.Turn, Executing}
+	//						break
+	//					}
+	//				}
+	//			} else if key == 'k' {
+	//				//send k and break loop but don't tell to quit
+	//				ticker.Stop()
+	//				request := stubs.Request{Ctrl: key}
+	//				response := new(stubs.Response)
+	//				client.Call(stubs.Control, request, response)
+	//				break tickerCtrlLoop
+	//			}
+	//		case <-doneChan:
+	//			break tickerCtrlLoop
+	//			//if the GenerateGameOfLife call ends then leave the loop
+	//		default: // If no ticker or control continue
+	//		}
+	//	}
+	//	quitChan <- quit
+	//	return
+	//}()
+	//// receive the new world and number of turns from the generateGameOfLife call and put in a new
+	//quit := <-quitChan
+	//if quit {
+	//	<-worldChan
+	//	<-turnChan
+	//	c.ioCommand <- ioCheckIdle
+	//	<-c.ioIdle
+	//	c.events <- StateChange{turn, Quitting}
+	//	close(c.events)
+	//}
 
 	nextWorld = <-worldChan
 	turn = <-turnChan
