@@ -6,6 +6,7 @@ var Control = "Broker.Control"
 var GeneratePart = "Worker.GeneratePart"
 var Close = "Worker.Close"
 var HaloExchange = "Worker.HaloExchange"
+var WorkerAlive = "Worker.Ping"
 
 type Response struct {
 	WorldPart [][]byte
@@ -30,8 +31,15 @@ type Request struct {
 	EndX   int
 	StartY int
 	EndY   int
-	Ctrl   rune
 	ID     string
+}
+
+type ResponseAlive struct {
+	Alive bool
+}
+
+type ControlRequest struct {
+	Ctrl rune
 }
 
 type HaloRequest struct {

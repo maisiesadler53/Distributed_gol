@@ -15,6 +15,12 @@ type Worker struct {
 	closeListener chan bool
 }
 
+func (s *Worker) Ping(req stubs.Request, res *stubs.ResponseAlive) (err error) {
+	res.Alive = true
+	fmt.Println("Ran")
+	return
+}
+
 func (s *Worker) Close(req stubs.Request, res *stubs.Response) (err error) {
 	s.closeListener <- true
 	return
@@ -56,14 +62,13 @@ func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error
 			}
 		}
 	}
-	fmt.Println(len(nextWorldPart))
 	res.WorldPart = append([][]byte{}, nextWorldPart...)
 
 	return
 }
 
 func main() {
-	pAddr := flag.String("port", "8020", "Port to listen on")
+	pAddr := flag.String("port", "8000", "Port to listen on")
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 	closeListener := make(chan bool, 1)
