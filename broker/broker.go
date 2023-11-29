@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/rpc"
 	"strconv"
+	"sync"
 	"time"
 
 	"uk.ac.bris.cs/gameoflife/stubs"
@@ -18,24 +19,51 @@ type Broker struct {
 	turn          chan int
 	ctrl          chan rune
 	done          chan bool
+	timeout       chan int
 	closeListener chan bool
+	mu            sync.Mutex
 }
 
 var ClientStates map[string]stubs.WorldState
+
+func HeartBeatMonitor(client *rpc.Client, timeout chan int, done chan bool, id int) {
+	req := stubs.Request{}
+	res := stubs.ResponseAlive{Alive: true}
+	time.Sleep(3 * time.Second)
+timeoutLoop:
+	for {
+		time.Sleep(3 * time.Second)
+		err := client.Call(stubs.WorkerAlive, req, &res)
+		if err != nil {
+			fmt.Println("Error connecting to worker ", id, ":", err)
+			timeout <- id
+			break timeoutLoop
+		} else if !res.Alive {
+			fmt.Println(id)
+			timeout <- id
+			break timeoutLoop
+		}
+	}
+}
 
 func callWorker(client *rpc.Client, req stubs.Request, res *stubs.Response, worldChan chan [][]byte) {
 
 	client.Call(stubs.GeneratePart, req, res)
 	//once call is over tell the distributer to stop listening for commands and ticks
 	//send turn and world to the distributer
-	worldChan <- res.WorldPart
+	if res.WorldPart != nil {
+		worldChan <- res.WorldPart
+	}
 }
 
-func (s *Broker) Control(req stubs.Request, res *stubs.Response) (err error) {
+func (s *Broker) Control(req stubs.ControlRequest, res *stubs.Response) (err error) {
 	//send control key to GenerateGameOfLife
+
 	s.ctrl <- req.Ctrl
 	//receive world from GenerateGameOflife and give to response
-	res.WorldPart = <-s.world
+	if req.Ctrl == 's' || req.Ctrl == 'k' {
+		res.WorldPart = <-s.world
+	}
 	res.Turn = <-s.turn
 	return
 }
@@ -51,6 +79,8 @@ func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err
 }
 
 func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	clientID := req.ID
 	//make a world to contain the updated state each loop
 	var world [][]byte
@@ -101,6 +131,10 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err
 		}(client)
 	}
 
+	for id := range clients {
+		go HeartBeatMonitor(clients[id], s.timeout, s.done, id)
+	}
+
 	//loop through each turn and update state
 turnLoop:
 	for turn = startTurn; turn < p.Turns; turn++ {
@@ -123,18 +157,15 @@ turnLoop:
 					Turn:  turn,
 				}
 				ClientStates[clientID] = currentState
-				s.world <- world
 				s.turn <- turn
 				//end the process by leaving the loop
 				break turnLoop
 			} else if ctrl == 'p' {
 				//if p send world and wait in loop until p pressed again, then send again
-				s.world <- world
 				s.turn <- turn
 				for {
 					ctrlAgain := <-s.ctrl
 					if ctrlAgain == 'p' {
-						s.world <- world
 						s.turn <- turn
 						break
 					}
@@ -150,13 +181,15 @@ turnLoop:
 				s.closeListener <- true
 				break turnLoop
 			}
-
 			//if no ticker or ctrl just continue
 		default:
 		}
+
 		//loop through the positions in the world and add up the number or surrounding live cells
+		workingThreadsCounter := 0
 		for i := 0; i < p.Threads; i++ {
-			haloWorld := [][]byte{}
+
+			var haloWorld [][]byte
 			if i == 0 {
 				if p.Threads == 1 {
 					haloWorld = append([][]byte{}, world[p.ImageHeight-1])
@@ -164,17 +197,12 @@ turnLoop:
 					haloWorld = append(haloWorld, world[0])
 				} else {
 					haloWorld = append([][]byte{world[p.ImageHeight-1]}, world[:(i+1)*p.ImageHeight/p.Threads+2]...)
-					fmt.Println(p.ImageHeight-1, ";", (i+1)*p.ImageHeight/p.Threads+2, ":first")
 				}
 			} else if i == (p.Threads - 1) {
 				haloWorld = append(world[i*p.ImageHeight/p.Threads:], world[0])
-				fmt.Println(i*p.ImageHeight/p.Threads, "; last")
 			} else {
 				haloWorld = world[i*p.ImageHeight/p.Threads : (i+1)*p.ImageHeight/p.Threads+2]
-				fmt.Println(i*p.ImageHeight/p.Threads, ";", (i+1)*p.ImageHeight/p.Threads+2, ";middle")
 			}
-			fmt.Println(p.ImageHeight/p.Threads + 1)
-			fmt.Println(len(haloWorld) - 2)
 			req := stubs.Request{
 				World:  haloWorld,
 				Params: p,
@@ -184,17 +212,37 @@ turnLoop:
 				EndY:   p.ImageWidth,
 			}
 			res := new(stubs.Response)
-			go callWorker(clients[i], req, res, worldParts[i]) // every part goes to 1 worldPart channel
+			for clients[workingThreadsCounter] == nil {
+				fmt.Println(workingThreadsCounter)
+				workingThreadsCounter++
+			}
+			go callWorker(clients[workingThreadsCounter], req, res, worldParts[i]) // every part goes to 1 worldPart channel
+			workingThreadsCounter++
 		}
 
+	secondThreadLoop:
 		for i := 0; i < p.Threads; i++ {
-			part := <-worldParts[i]
-			nextWorld = append(nextWorld, part...)
+			select {
+			case part := <-worldParts[i]:
+				nextWorld = append(nextWorld, part...)
+			case id := <-s.timeout:
+				turn--
+				client := rpc.Client{}
+				clients = append(clients[:id], []*rpc.Client{&client}...)
+				clients = append(clients, clients[id+1:]...)
+				for client := range clients {
+					fmt.Println(client)
+				}
+				fmt.Println(len(clients))
+				nextWorld = world
+				p.Threads--
+				fmt.Println("Got here")
+				break secondThreadLoop
+			}
 		}
 		//set the world to the nextWorld and reset the nextWorld
-		world = append([][]byte{}, nextWorld...)
+		world = nextWorld
 		nextWorld = [][]byte{}
-
 	}
 	//after all turns set the response to be the number of turns and the final world state
 	res.WorldPart = world
@@ -203,7 +251,7 @@ turnLoop:
 }
 
 func main() {
-	pAddr := flag.String("port", "8040", "Port to listen on")
+	pAddr := flag.String("port", "8090", "Port to listen on")
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 	world := make(chan [][]byte)
@@ -211,11 +259,13 @@ func main() {
 	turn := make(chan int, 1)
 	ctrl := make(chan rune)
 	done := make(chan bool)
+	timeout := make(chan int)
 	closeListener := make(chan bool)
 	ClientStates = make(map[string]stubs.WorldState)
+	var mu sync.Mutex
 
 	//register rpc calls
-	err := rpc.Register(&Broker{tick, world, turn, ctrl, done, closeListener})
+	err := rpc.Register(&Broker{tick, world, turn, ctrl, done, timeout, closeListener, mu})
 	if err != nil {
 		fmt.Println("Error registering listener", err)
 		return
@@ -237,5 +287,4 @@ func main() {
 	//handles incoming RPC requests until closed
 	go rpc.Accept(listener)
 	<-closeListener
-	return
 }
