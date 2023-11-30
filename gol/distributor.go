@@ -2,7 +2,6 @@ package gol
 
 import (
 	"fmt"
-	"math/rand"
 	"net/rpc"
 	"strconv"
 	"time"
@@ -21,10 +20,6 @@ type distributorChannels struct {
 }
 
 //call
-func generateUniqueID() string {
-	rand.Seed(time.Now().UnixNano())
-	return strconv.Itoa(rand.Intn(1000))
-}
 
 func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Params, startX int, endX int, startY int, endY int, quit chan bool, worldChan chan [][]byte, turn chan int, doneChan chan bool) {
 
@@ -37,16 +32,16 @@ func callGenerateGameOfLife(client *rpc.Client, world [][]byte, params stubs.Par
 		StartY: startY,
 		EndY:   endY,
 		//if you want the tests to pass set the ID to ID, if you want fault tolerance to work set the ID to be 1
-		ID: "1",
+		ClientID: "1",
 	}
 	//make response to hold the reply
-	response := new(stubs.Response)
+	response := new(stubs.BrokerResponse)
 	//call GenerateGameOfLife
 	client.Call(stubs.GenerateGameOfLife, request, response)
 	//once call is over tell the distributer to stop listening for commands and ticks
 	//send turn and world to the distributer
 	turn <- response.Turn
-	worldChan <- response.WorldPart
+	worldChan <- response.World
 	doneChan <- true
 }
 
@@ -128,18 +123,18 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 			case <-ticker.C:
 				//call AliceCellCount every tick, receive world and send to alivecell event
 				request := stubs.Request{}
-				response := new(stubs.Response)
+				response := new(stubs.BrokerResponse)
 				client.Call(stubs.AliveCellCount, request, response)
-				newWorld := response.WorldPart
+				newWorld := response.World
 				c.events <- AliveCellsCount{response.Turn, len(calculateAliveCells(p, newWorld))}
 			case <-ticker2.C:
 				request := stubs.Request{}
-				response := new(stubs.Response)
+				response := new(stubs.BrokerResponse)
 				client.Call(stubs.AliveCellCount, request, response)
-				newWorld := response.WorldPart
+
 				for i, row := range currentWorld {
 					for j := range row {
-						if currentWorld[i][j] != newWorld[i][j] {
+						if currentWorld[i][j] != response.World[i][j] {
 							c.events <- CellFlipped{
 								CompletedTurns: response.Turn,
 								Cell:           util.Cell{X: j, Y: i},
@@ -148,19 +143,19 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					}
 				}
 				c.events <- TurnComplete{response.Turn}
-				currentWorld = append([][]byte{}, newWorld...)
+				currentWorld = append([][]byte{}, response.World...)
 			case key := <-keyPresses:
 				if key == 's' {
 					//call the Control rpc call and produce pgm image from the current world
 					request := stubs.ControlRequest{Ctrl: key}
-					response := new(stubs.Response)
+					response := new(stubs.BrokerResponse)
 					client.Call(stubs.Control, request, response)
 					c.ioCommand <- 0
 					filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(response.Turn)
 					c.ioFilename <- filename
 					for i, row := range world {
 						for j := range row {
-							c.ioOutput <- response.WorldPart[i][j]
+							c.ioOutput <- response.World[i][j]
 						}
 					}
 					c.events <- ImageOutputComplete{response.Turn, filename}
@@ -170,7 +165,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					ticker.Stop()
 					quit = true
 					request := stubs.ControlRequest{Ctrl: key}
-					response := new(stubs.Response)
+					response := new(stubs.BrokerResponse)
 					client.Call(stubs.Control, request, response)
 					turn = response.Turn
 					break tickerCtrlLoop
@@ -178,7 +173,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 				} else if key == 'p' {
 					//call the control rpc and tell event to pause execution
 					request := stubs.ControlRequest{Ctrl: key}
-					response := new(stubs.Response)
+					response := new(stubs.BrokerResponse)
 					client.Call(stubs.Control, request, response)
 					c.events <- StateChange{response.Turn, Paused}
 					for {
@@ -186,7 +181,7 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 						if keyAgain == 'p' {
 							//wait until p is pressed again to continue
 							request := stubs.ControlRequest{Ctrl: key}
-							response := new(stubs.Response)
+							response := new(stubs.BrokerResponse)
 							client.Call(stubs.Control, request, response)
 							c.events <- StateChange{response.Turn, Executing}
 							break
@@ -196,15 +191,16 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 					//send k and break loop but don't tell to quit
 					ticker.Stop()
 					request := stubs.ControlRequest{Ctrl: key}
-					response := new(stubs.Response)
+					response := new(stubs.BrokerResponse)
 					client.Call(stubs.Control, request, response)
 					turn = response.Turn
+					world = response.World
 					c.ioCommand <- 0
 					filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(response.Turn)
 					c.ioFilename <- filename
 					for i, row := range world {
 						for j := range row {
-							c.ioOutput <- response.WorldPart[i][j]
+							c.ioOutput <- world[i][j]
 						}
 					}
 					c.events <- ImageOutputComplete{response.Turn, filename}
@@ -235,14 +231,14 @@ func distributor(p Params, c distributorChannels, keyPresses <-chan rune) {
 	world = append([][]byte{}, nextWorld...)
 	nextWorld = [][]byte{}
 	//send matrix to make pgm
-	// c.ioCommand <- 0
-	// filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(turn)
-	// c.ioFilename <- filename
-	// for i, row := range world {
-	// 	for j := range row {
-	// 		c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
-	// 	}
-	// }
+	c.ioCommand <- 0
+	filename = strconv.Itoa(p.ImageWidth) + "x" + strconv.Itoa(p.ImageHeight) + "x" + strconv.Itoa(turn)
+	c.ioFilename <- filename
+	for i, row := range world {
+		for j := range row {
+			c.ioOutput <- world[i][j] // Sending the matrix so the io can make a pgm
+		}
+	}
 	c.events <- ImageOutputComplete{turn, filename}
 	//report final state to events
 	c.events <- FinalTurnComplete{turn, calculateAliveCells(p, world)}

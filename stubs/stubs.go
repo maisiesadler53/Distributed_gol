@@ -8,10 +8,16 @@ var Close = "Worker.Close"
 var HaloExchange = "Worker.HaloExchange"
 var WorkerAlive = "Worker.Ping"
 
-type Response struct {
-	WorldPart [][]byte
-	Turn      int
+type BrokerResponse struct {
+	World [][]byte
+	Turn  int
 }
+
+type WorkerResponse struct {
+	WorldPart [][]byte
+	Complete  bool
+}
+
 type Params struct {
 	Turns       int
 	Threads     int
@@ -25,16 +31,16 @@ type WorldState struct {
 }
 
 type Request struct {
-	World  [][]byte
-	Params Params
-	StartX int
-	EndX   int
-	StartY int
-	EndY   int
-	ID     string
+	World    [][]byte
+	Params   Params
+	StartX   int
+	EndX     int
+	StartY   int
+	EndY     int
+	ClientID string
 }
 
-type ResponseAlive struct {
+type AliveResponse struct {
 	Alive bool
 }
 

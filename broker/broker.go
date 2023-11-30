@@ -28,60 +28,65 @@ var ClientStates map[string]stubs.WorldState
 
 func HeartBeatMonitor(client *rpc.Client, timeout chan int, done chan bool, id int) {
 	req := stubs.Request{}
-	res := stubs.ResponseAlive{Alive: true}
+	res := stubs.AliveResponse{Alive: true}
 	time.Sleep(3 * time.Second)
 timeoutLoop:
 	for {
 		time.Sleep(3 * time.Second)
 		err := client.Call(stubs.WorkerAlive, req, &res)
+		fmt.Println("It ran ")
 		if err != nil {
 			fmt.Println("Error connecting to worker ", id, ":", err)
 			timeout <- id
 			break timeoutLoop
 		} else if !res.Alive {
-			fmt.Println(id)
+			fmt.Println("Closing connection:", id)
 			timeout <- id
 			break timeoutLoop
 		}
+
 	}
 }
 
-func callWorker(client *rpc.Client, req stubs.Request, res *stubs.Response, worldChan chan [][]byte) {
+func callWorker(client *rpc.Client, req stubs.Request, res *stubs.WorkerResponse, worldChan chan [][]byte) {
 
-	client.Call(stubs.GeneratePart, req, res)
+	err := client.Call(stubs.GeneratePart, req, res)
+	if err != nil {
+		fmt.Println("Error calling GeneratePart:", err)
+	}
 	//once call is over tell the distributer to stop listening for commands and ticks
 	//send turn and world to the distributer
-	if res.WorldPart != nil {
+	//if the response is unchanged (left as -1) then callworker failed and the worldpart should not be sent as
+	if res.Complete {
 		worldChan <- res.WorldPart
 	}
 }
 
-func (s *Broker) Control(req stubs.ControlRequest, res *stubs.Response) (err error) {
+func (s *Broker) Control(req stubs.ControlRequest, res *stubs.BrokerResponse) (err error) {
 	//send control key to GenerateGameOfLife
 
 	s.ctrl <- req.Ctrl
 	//receive world from GenerateGameOflife and give to response
 	if req.Ctrl == 's' || req.Ctrl == 'k' {
-		res.WorldPart = <-s.world
+		res.World = <-s.world
 	}
 	res.Turn = <-s.turn
 	return
 }
 
-func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.Response) (err error) {
+func (s *Broker) AliveCellCountTick(req stubs.Request, res *stubs.BrokerResponse) (err error) {
 	//tell GameOfLife that ticker has been sent
 	s.tick <- true
 	//return from function if the world and turn are received from generateGameOfLife
-	res.WorldPart = <-s.world
+	res.World = <-s.world
 	res.Turn = <-s.turn
 	return
 
 }
 
-func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	clientID := req.ID
+func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.BrokerResponse) (err error) {
+
+	clientID := req.ClientID
 	//make a world to contain the updated state each loop
 	var world [][]byte
 	var nextWorld [][]byte
@@ -130,9 +135,10 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.Response) (err
 			}
 		}(client)
 	}
-
-	for id := range clients {
-		go HeartBeatMonitor(clients[id], s.timeout, s.done, id)
+	clientMap := map[int]*rpc.Client{}
+	for id, client := range clients {
+		clientMap[id] = client
+		go HeartBeatMonitor(client, s.timeout, s.done, id)
 	}
 
 	//loop through each turn and update state
@@ -172,23 +178,21 @@ turnLoop:
 				}
 			} else if ctrl == 'k' {
 				request := stubs.Request{}
-				response := new(stubs.Response)
+				response := new(stubs.BrokerResponse)
 				for _, client := range clients {
 					client.Call(stubs.Close, request, response)
 				}
-				s.world <- world
-				s.turn <- turn
+				s.world <- response.World
+				s.turn <- response.Turn
 				s.closeListener <- true
 				break turnLoop
 			}
 			//if no ticker or ctrl just continue
 		default:
 		}
-
+		workingThread := 0
 		//loop through the positions in the world and add up the number or surrounding live cells
-		workingThreadsCounter := 0
 		for i := 0; i < p.Threads; i++ {
-
 			var haloWorld [][]byte
 			if i == 0 {
 				if p.Threads == 1 {
@@ -211,41 +215,49 @@ turnLoop:
 				StartY: 0,
 				EndY:   p.ImageWidth,
 			}
-			res := new(stubs.Response)
-			for clients[workingThreadsCounter] == nil {
-				fmt.Println(workingThreadsCounter)
-				workingThreadsCounter++
+			res := stubs.WorkerResponse{
+				WorldPart: [][]byte{},
+				Complete:  false,
 			}
-			go callWorker(clients[workingThreadsCounter], req, res, worldParts[i]) // every part goes to 1 worldPart channel
-			workingThreadsCounter++
+			for clientMap[workingThread] == nil {
+				workingThread++
+			}
+			go callWorker(clients[workingThread], req, &res, worldParts[i]) // every part goes to 1 worldPart channel
+			workingThread++
 		}
 
 	secondThreadLoop:
 		for i := 0; i < p.Threads; i++ {
 			select {
+			//if all parts are present because all workers are alive append them
 			case part := <-worldParts[i]:
 				nextWorld = append(nextWorld, part...)
 			case id := <-s.timeout:
-				turn--
-				client := rpc.Client{}
-				clients = append(clients[:id], []*rpc.Client{&client}...)
-				clients = append(clients, clients[id+1:]...)
-				for client := range clients {
-					fmt.Println(client)
+				//if a part is not sent then that worker disconnected, remove that server from the client list
+				//reset the world to the previous world and reduce the turn by
+				for j := i + 1; j < p.Threads; j++ {
+					select {
+					case <-worldParts[j]:
+					default:
+					}
 				}
-				fmt.Println(len(clients))
-				nextWorld = world
+				turn--
 				p.Threads--
-				fmt.Println("Got here")
+				clientMap[id] = nil
+				nextWorld = append([][]byte{}, world...)
 				break secondThreadLoop
 			}
 		}
 		//set the world to the nextWorld and reset the nextWorld
-		world = nextWorld
+		world = append([][]byte{}, nextWorld...)
 		nextWorld = [][]byte{}
+
 	}
 	//after all turns set the response to be the number of turns and the final world state
-	res.WorldPart = world
+	// for i := 0; i < p.Threads; i++ {
+	// 	s.done <- true
+	// }
+	res.World = world
 	res.Turn = turn
 	return
 }
@@ -254,11 +266,11 @@ func main() {
 	pAddr := flag.String("port", "8090", "Port to listen on")
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
-	world := make(chan [][]byte)
+	world := make(chan [][]byte, 1)
 	tick := make(chan bool)
 	turn := make(chan int, 1)
 	ctrl := make(chan rune)
-	done := make(chan bool)
+	done := make(chan bool, 10)
 	timeout := make(chan int)
 	closeListener := make(chan bool)
 	ClientStates = make(map[string]stubs.WorldState)

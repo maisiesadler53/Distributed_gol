@@ -15,18 +15,18 @@ type Worker struct {
 	closeListener chan bool
 }
 
-func (s *Worker) Ping(req stubs.Request, res *stubs.ResponseAlive) (err error) {
+func (s *Worker) Ping(req stubs.Request, res *stubs.AliveResponse) (err error) {
 	res.Alive = true
 	fmt.Println("Ran")
 	return
 }
 
-func (s *Worker) Close(req stubs.Request, res *stubs.Response) (err error) {
+func (s *Worker) Close(req stubs.Request, res *stubs.WorkerResponse) (err error) {
 	s.closeListener <- true
 	return
 }
 
-func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error) {
+func (s *Worker) GeneratePart(req stubs.Request, res *stubs.WorkerResponse) (err error) {
 	// p := req.Params
 	world := append([][]byte{}, req.World...)
 	startX := req.StartX    // = 1
@@ -62,6 +62,7 @@ func (s *Worker) GeneratePart(req stubs.Request, res *stubs.Response) (err error
 			}
 		}
 	}
+	res.Complete = true
 	res.WorldPart = append([][]byte{}, nextWorldPart...)
 
 	return
