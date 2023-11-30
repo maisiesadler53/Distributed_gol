@@ -95,7 +95,6 @@ func (s *Broker) GenerateGameOfLife(req stubs.Request, res *stubs.BrokerResponse
 	p := req.Params
 	startTurn := 0
 	turn := 0
-
 	//if client previously connected (ID recognised) then use the state last saved for the client
 	if state, exists := ClientStates[clientID]; exists {
 		world = append([][]byte{}, state.World...)
