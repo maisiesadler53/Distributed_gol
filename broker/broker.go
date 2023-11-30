@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/rpc"
 	"strconv"
-	"sync"
 	"time"
 
 	"uk.ac.bris.cs/gameoflife/stubs"
@@ -21,7 +20,6 @@ type Broker struct {
 	done          chan bool
 	timeout       chan int
 	closeListener chan bool
-	mu            sync.Mutex
 }
 
 var ClientStates map[string]stubs.WorldState
@@ -33,8 +31,12 @@ func HeartBeatMonitor(client *rpc.Client, timeout chan int, done chan bool, id i
 timeoutLoop:
 	for {
 		time.Sleep(3 * time.Second)
+		select {
+		case <-done:
+			break timeoutLoop
+		default:
+		}
 		err := client.Call(stubs.WorkerAlive, req, &res)
-		fmt.Println("It ran ")
 		if err != nil {
 			fmt.Println("Error connecting to worker ", id, ":", err)
 			timeout <- id
@@ -156,14 +158,16 @@ turnLoop:
 				s.world <- world
 				s.turn <- turn
 			} else if ctrl == 'q' {
-				turnsLeft := req.Params.Turns - turn
-				req.Params.Turns = turnsLeft
+				req.Params.Turns = turn
 				currentState := stubs.WorldState{
 					World: world,
 					Turn:  turn,
 				}
 				ClientStates[clientID] = currentState
 				s.turn <- turn
+				for i := 0; i < p.Threads; i++ {
+					s.done <- true
+				}
 				//end the process by leaving the loop
 				break turnLoop
 			} else if ctrl == 'p' {
@@ -177,13 +181,13 @@ turnLoop:
 					}
 				}
 			} else if ctrl == 'k' {
+				s.world <- world
+				s.turn <- turn
 				request := stubs.Request{}
 				response := new(stubs.BrokerResponse)
 				for _, client := range clients {
 					client.Call(stubs.Close, request, response)
 				}
-				s.world <- response.World
-				s.turn <- response.Turn
 				s.closeListener <- true
 				break turnLoop
 			}
@@ -253,10 +257,9 @@ turnLoop:
 		nextWorld = [][]byte{}
 
 	}
-	//after all turns set the response to be the number of turns and the final world state
-	// for i := 0; i < p.Threads; i++ {
-	// 	s.done <- true
-	// }
+	for i := 0; i < p.Threads; i++ {
+		s.done <- true
+	}
 	res.World = world
 	res.Turn = turn
 	return
@@ -274,10 +277,9 @@ func main() {
 	timeout := make(chan int)
 	closeListener := make(chan bool)
 	ClientStates = make(map[string]stubs.WorldState)
-	var mu sync.Mutex
 
 	//register rpc calls
-	err := rpc.Register(&Broker{tick, world, turn, ctrl, done, timeout, closeListener, mu})
+	err := rpc.Register(&Broker{tick, world, turn, ctrl, done, timeout, closeListener})
 	if err != nil {
 		fmt.Println("Error registering listener", err)
 		return

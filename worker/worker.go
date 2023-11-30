@@ -69,7 +69,7 @@ func (s *Worker) GeneratePart(req stubs.Request, res *stubs.WorkerResponse) (err
 }
 
 func main() {
-	pAddr := flag.String("port", "8000", "Port to listen on")
+	pAddr := flag.String("port", "8020", "Port to listen on")
 	flag.Parse()
 	rand.Seed(time.Now().UnixNano())
 	closeListener := make(chan bool, 1)
