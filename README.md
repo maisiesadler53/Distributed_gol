@@ -1,5 +1,9 @@
 # CSA Coursework: Game of Life
 
+## Group Members
+- Josif Trenchovski
+- Maisie Sadler
+
 ## Task Overview
 
 ### Introduction
